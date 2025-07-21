@@ -99,23 +99,25 @@ This is a macOS-native PDF composer app built with Swift 5.9, SwiftUI, PDFKit, a
 ### Branch Workflow Rules
 When working on this PDF project, Claude Code must follow this GitHub workflow:
 
-1. **All edits go to feature branches** - Never commit directly to main
-2. **Descriptive branch names** - Use format: `feature/description-of-edit` (e.g., `feature/fix-layout-responsiveness`, `feature/add-export-formats`)
-3. **Descriptive commit messages** - Each commit should clearly describe what was changed and why
-4. **Feature branch workflow**:
+1. **MANDATORY: All edits go to feature branches** - NEVER commit directly to main
+2. **Always push to variant branches** - Every edit must be pushed to a feature branch first
+3. **Descriptive branch names** - Use format: `feature/description-of-edit` (e.g., `feature/fix-layout-responsiveness`, `feature/add-export-formats`)
+4. **Descriptive commit messages** - Each commit should clearly describe what was changed and why
+5. **Required workflow for EVERY edit**:
    ```bash
-   # Create descriptive feature branch
+   # Create descriptive feature branch for each edit
    git checkout -b feature/your-edit-description
    
    # Make changes and commit with clear message
    git add .
    git commit -m "Descriptive commit message explaining the change"
    
-   # Push to feature branch
+   # ALWAYS push to feature branch immediately after each edit
    git push -u origin feature/your-edit-description
    ```
-5. **Wait for approval** - Only merge to main when user gives explicit approval
-6. **Branch cleanup** - Delete feature branches after successful merge to main
+6. **Wait for user approval** - Only merge to main when user explicitly says "everything is okay" or "go ahead"
+7. **Revert capability** - If user says "revert", checkout the last known good branch before the problematic changes
+8. **Branch cleanup** - Delete feature branches only after successful merge to main and user confirmation
 
 ### Current Setup
 - Main branch contains the complete, working codebase
