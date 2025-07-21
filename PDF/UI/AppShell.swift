@@ -8,7 +8,7 @@ enum AppScene: Hashable {
     case main
     case preview
     case mainMenu
-    case pageSelection
+    // pageSelection removed - handled in BrutalistAppShell
 }
 
 enum CompositionMode: String, CaseIterable, Identifiable {
@@ -31,7 +31,7 @@ class AppShellViewModel: ObservableObject {
     @Published var thumbnails: [NSImage] = []
     @Published var citationPageIndices: [Int] = []
     @Published var coverPageIndex: Int? = nil
-    @Published var showPageSelection: Bool = false
+    // showPageSelection removed - page selection handled in BrutalistAppShell
     @Published var pdfLoadingProgress: Double? = nil
     
     // Optimized thumbnail cache
@@ -284,11 +284,7 @@ struct AppShell: View {
                                 .onAppear {
                                     print("DEBUG: Showing MainMenuView")
                                 }
-                        } else if viewModel.selectedAppScene == .pageSelection {
-                            PageSelectionView(viewModel: viewModel)
-                                .onAppear {
-                                    print("DEBUG: Showing PageSelectionView")
-                                }
+                        // .pageSelection scene removed - page selection is handled in BrutalistAppShell
                         } else if viewModel.showPreview || viewModel.selectedAppScene == .preview {
                             // Prioritize showing preview when either property is set
                             BrutalistPreviewView(viewModel: viewModel)
