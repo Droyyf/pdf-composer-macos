@@ -34,9 +34,10 @@ class AppShellViewModel: ObservableObject {
     // showPageSelection removed - page selection handled in BrutalistAppShell
     @Published var pdfLoadingProgress: Double? = nil
     
-    // Optimized thumbnail cache
-    @Published var thumbnailCache = ThumbnailCache()
+    // Optimized thumbnail cache (actor-isolated)
+    let thumbnailCache = ThumbnailCache()
     private var loadingTask: Task<Void, Never>? = nil
+    private var currentBatchId: UUID? = nil
 
     // Preview state
     @Published var showPreview: Bool = false {
@@ -63,6 +64,27 @@ class AppShellViewModel: ObservableObject {
             }
         }
 
+        // SECURITY: Validate file before processing
+        let securityValidator = PDFSecurityValidator(configuration: .default)
+        do {
+            try await securityValidator.validateFile(at: url)
+            print("DEBUG: PDF security validation passed")
+        } catch let securityError as PDFSecurityError {
+            await MainActor.run {
+                isLoading = false
+                print("DEBUG: PDF security validation failed: \(securityError.description)")
+            }
+            throw NSError(domain: "AppShellViewModel.Security", code: 100,
+                          userInfo: [NSLocalizedDescriptionKey: "Security validation failed: \(securityError.description)"])
+        } catch {
+            await MainActor.run {
+                isLoading = false
+                print("DEBUG: PDF security validation error: \(error.localizedDescription)")
+            }
+            throw NSError(domain: "AppShellViewModel.Security", code: 101,
+                          userInfo: [NSLocalizedDescriptionKey: "Security validation error: \(error.localizedDescription)"])
+        }
+
         // Create PDF document
         guard let document = PDFDocument(url: url) else {
             await MainActor.run {
@@ -75,6 +97,26 @@ class AppShellViewModel: ObservableObject {
 
         print("DEBUG: PDF document created, processing \(document.pageCount) pages")
 
+        // SECURITY: Validate the loaded document for additional security checks
+        do {
+            try await securityValidator.validateDocument(document)
+            print("DEBUG: PDF document security validation passed")
+        } catch let securityError as PDFSecurityError {
+            await MainActor.run {
+                isLoading = false
+                print("DEBUG: PDF document security validation failed: \(securityError.description)")
+            }
+            throw NSError(domain: "AppShellViewModel.Security", code: 102,
+                          userInfo: [NSLocalizedDescriptionKey: "Document security validation failed: \(securityError.description)"])
+        } catch {
+            await MainActor.run {
+                isLoading = false
+                print("DEBUG: PDF document security validation error: \(error.localizedDescription)")
+            }
+            throw NSError(domain: "AppShellViewModel.Security", code: 103,
+                          userInfo: [NSLocalizedDescriptionKey: "Document security validation error: \(error.localizedDescription)"])
+        }
+
         // Check for document validity
         if document.pageCount == 0 {
             await MainActor.run {
@@ -85,48 +127,37 @@ class AppShellViewModel: ObservableObject {
                           userInfo: [NSLocalizedDescriptionKey: "PDF has no pages."])
         }
 
-        // Initialize thumbnails array with placeholders and start async generation
-        var placeholderThumbnails: [NSImage] = []
-        print("DEBUG: Starting async thumbnail generation for \(document.pageCount) pages")
+        // Initialize thumbnails with async batch generation
+        print("DEBUG: Starting async batch thumbnail generation for \(document.pageCount) pages")
         
-        // Create placeholder thumbnails for immediate UI response
+        // Prepare pages data for batch processing
+        var pagesData: [(index: Int, page: PDFPage)] = []
         for i in 0..<document.pageCount {
             if let page = document.page(at: i) {
-                // Generate low-res placeholder synchronously for immediate display
-                let placeholder = page.thumbnail(of: CGSize(width: 80, height: 100), for: .cropBox)
-                placeholderThumbnails.append(placeholder)
-                
-                // Start async high-res thumbnail generation
-                await MainActor.run {
-                    self.thumbnailCache.generateThumbnailAsync(for: i, from: page)
-                }
-            }
-            
-            // Update loading progress
-            await MainActor.run {
-                self.pdfLoadingProgress = Double(i + 1) / Double(document.pageCount)
-                print("DEBUG: Loading progress \(self.pdfLoadingProgress ?? 0)")
+                pagesData.append((index: i, page: page))
             }
         }
         
-        // Preload first visible thumbnails with higher priority
-        if document.pageCount > 0 {
-            let visibleRange = min(10, document.pageCount)
-            for i in 0..<visibleRange {
-                if let page = document.page(at: i) {
-                    await MainActor.run {
-                        self.thumbnailCache.generateThumbnailAsync(for: i, from: page, priority: .userInitiated)
-                    }
-                }
-            }
-        }
+        // Generate thumbnails in batches using TaskGroup with cancellation support
+        let (thumbnailResults, batchId) = await thumbnailCache.generateThumbnailsBatch(
+            for: pagesData
+        )
+        currentBatchId = batchId
+        
+        // Convert ThumbnailResult to NSImage array, sorted by pageIndex
+        let sortedResults = thumbnailResults.sorted { $0.pageIndex < $1.pageIndex }
+        let placeholderThumbnails = sortedResults.map { $0.image }
 
         // Update the UI on the main thread
         await MainActor.run {
             print("DEBUG: Finished loading PDF, updating UI")
             self.pdfDocument = document
             self.thumbnails = placeholderThumbnails
+            self.pdfLoadingProgress = 1.0
             self.isLoading = false
+            
+            // Clear batch tracking
+            self.currentBatchId = nil
 
             // Update scene state
             if self.showPreview {
@@ -151,21 +182,32 @@ class AppShellViewModel: ObservableObject {
     func clearDocument() {
         loadingTask?.cancel()
         loadingTask = nil
-        thumbnailCache.clearCache()
+        
+        // Cancel current batch if running
+        if let batchId = currentBatchId {
+            Task {
+                await thumbnailCache.cancelBatch(id: batchId)
+            }
+            currentBatchId = nil
+        }
+        
+        Task {
+            await thumbnailCache.clearCache()
+        }
         pdfDocument = nil
         thumbnails = []
         resetSelection()
     }
     
     // Get optimized thumbnail for page
-    func getThumbnail(for pageIndex: Int) -> NSImage? {
+    func getThumbnail(for pageIndex: Int) async -> NSImage? {
         // Try to get full resolution thumbnail first
-        if let fullThumbnail = thumbnailCache.getThumbnail(for: pageIndex) {
+        if let fullThumbnail = await thumbnailCache.getThumbnail(for: pageIndex) {
             return fullThumbnail
         }
         
         // Fall back to placeholder if available
-        if let placeholder = thumbnailCache.getPlaceholder(for: pageIndex) {
+        if let placeholder = await thumbnailCache.getPlaceholder(for: pageIndex) {
             return placeholder
         }
         
@@ -178,8 +220,8 @@ class AppShellViewModel: ObservableObject {
     }
     
     // Check if thumbnail is loading
-    func isThumbnailLoading(_ pageIndex: Int) -> Bool {
-        return thumbnailCache.loadingStates.contains(pageIndex)
+    func isThumbnailLoading(_ pageIndex: Int) async -> Bool {
+        return await thumbnailCache.isLoading(pageIndex: pageIndex)
     }
     
     // Preload thumbnails for viewport
@@ -187,11 +229,13 @@ class AppShellViewModel: ObservableObject {
         guard let document = pdfDocument else { return }
         
         let endIndex = min(startIndex + count, document.pageCount)
-        for i in startIndex..<endIndex {
-            if let page = document.page(at: i),
-               thumbnailCache.getThumbnail(for: i) == nil,
-               !thumbnailCache.loadingStates.contains(i) {
-                thumbnailCache.generateThumbnailAsync(for: i, from: page, priority: .utility)
+        Task {
+            for i in startIndex..<endIndex {
+                if let page = document.page(at: i),
+                   await thumbnailCache.getThumbnail(for: i) == nil,
+                   !(await thumbnailCache.isLoading(pageIndex: i)) {
+                    await thumbnailCache.generateThumbnailAsync(for: i, from: page, priority: .utility)
+                }
             }
         }
     }
@@ -203,13 +247,26 @@ class AppShellViewModel: ObservableObject {
             print("PDF Pages: \(doc.pageCount)")
         }
         print("Thumbnails: \(thumbnails.count)")
-        print("Loading States: \(thumbnailCache.loadingStates)")
+        Task {
+            let loadingStates = await thumbnailCache.getLoadingStates()
+            print("Loading States: \(loadingStates)")
+        }
         print("Citation Page Indices: \(citationPageIndices)")
         print("Cover Page Index: \(String(describing: coverPageIndex))")
         print("Current Scene: \(selectedAppScene)")
         print("Composition Mode: \(compositionMode.rawValue)")
         print("Export Format: \(exportFormat.rawValue)")
         print("Loading: \(isLoading)")
+    }
+    
+}
+
+// MARK: - Array Extension for Batching
+private extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
     }
 }
 

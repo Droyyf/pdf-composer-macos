@@ -4,8 +4,16 @@ import AppKit
 
 actor PDFService {
     private let maxCacheSize = 100 * 1024 * 1024 // 100MB cache limit
-    private var thumbnailCache: [String: NSImage] = [:]
-    private var cacheSize = 0
+    private let cache = NSCache<NSString, NSImage>()
+    private var accessOrder: [String] = [] // Track access order for LRU
+    private var cacheSizes: [String: Int] = [:] // Track actual sizes
+    private var currentCacheSize = 0
+    
+    init() {
+        // Set reasonable limits on the NSCache
+        cache.countLimit = 500 // Maximum number of thumbnails
+        cache.totalCostLimit = maxCacheSize
+    }
     
     func open(url: URL) async throws -> PDFDocument {
         return try await Task.detached(priority: .userInitiated) {
@@ -20,7 +28,9 @@ actor PDFService {
         let cacheKey = "\(document.documentURL?.absoluteString ?? "unknown")_\(page)_\(Int(size.width))x\(Int(size.height))"
         
         // Check cache first if enabled
-        if useCache, let cachedThumbnail = thumbnailCache[cacheKey] {
+        if useCache, let cachedThumbnail = cache.object(forKey: NSString(string: cacheKey)) {
+            // Update LRU order
+            updateAccessOrder(for: cacheKey)
             return cachedThumbnail
         }
         
@@ -34,32 +44,62 @@ actor PDFService {
             
             // Cache if enabled and under size limit
             if useCache {
-                await self?.cacheThumbnail(thumbnail, forKey: cacheKey)
+                await self?.cacheThumbnail(thumbnail, forKey: cacheKey, size: size)
             }
             
             return thumbnail
         }.value
     }
     
-    private func cacheThumbnail(_ image: NSImage, forKey key: String) {
-        let imageSize = Int(image.size.width * image.size.height * 4) // Approximate RGBA size
+    private func cacheThumbnail(_ image: NSImage, forKey key: String, size: CGSize) {
+        // Calculate accurate bitmap size based on actual image representation
+        let imageSize = calculateImageSize(image, targetSize: size)
         
         // Clean cache if it would exceed limit
-        if cacheSize + imageSize > maxCacheSize {
-            clearOldestCacheEntries()
+        while currentCacheSize + imageSize > maxCacheSize && !accessOrder.isEmpty {
+            evictOldestEntry()
         }
         
-        thumbnailCache[key] = image
-        cacheSize += imageSize
+        // Store in both NSCache and our tracking structures
+        cache.setObject(image, forKey: NSString(string: key), cost: imageSize)
+        cacheSizes[key] = imageSize
+        currentCacheSize += imageSize
+        
+        // Update LRU order
+        updateAccessOrder(for: key)
     }
     
-    private func clearOldestCacheEntries() {
-        // Simple cleanup - remove half the cache
-        let keysToRemove = Array(thumbnailCache.keys.prefix(thumbnailCache.count / 2))
-        for key in keysToRemove {
-            thumbnailCache.removeValue(forKey: key)
+    private func calculateImageSize(_ image: NSImage, targetSize: CGSize) -> Int {
+        // More accurate size calculation considering actual bitmap data
+        guard let representation = image.representations.first as? NSBitmapImageRep else {
+            // Fallback to target size calculation
+            return Int(targetSize.width * targetSize.height * 4) // RGBA
         }
-        cacheSize = cacheSize / 2 // Approximate
+        
+        // Calculate based on actual representation
+        let bytesPerPixel = representation.bitsPerPixel / 8
+        return representation.pixelsWide * representation.pixelsHigh * max(bytesPerPixel, 4)
+    }
+    
+    private func updateAccessOrder(for key: String) {
+        // Remove if already exists
+        if let index = accessOrder.firstIndex(of: key) {
+            accessOrder.remove(at: index)
+        }
+        // Add to end (most recently used)
+        accessOrder.append(key)
+    }
+    
+    private func evictOldestEntry() {
+        guard let oldestKey = accessOrder.first else { return }
+        
+        // Remove from all tracking structures
+        accessOrder.removeFirst()
+        cache.removeObject(forKey: NSString(string: oldestKey))
+        
+        if let size = cacheSizes.removeValue(forKey: oldestKey) {
+            currentCacheSize -= size
+        }
     }
 
     func export(document: PDFDocument, format: ExportFormat, url: URL, quality: CGFloat = 0.9) async throws {
@@ -95,7 +135,9 @@ actor PDFService {
     }
     
     func clearCache() {
-        thumbnailCache.removeAll()
-        cacheSize = 0
+        cache.removeAllObjects()
+        accessOrder.removeAll()
+        cacheSizes.removeAll()
+        currentCacheSize = 0
     }
 }
