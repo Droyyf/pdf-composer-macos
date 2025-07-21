@@ -15,13 +15,27 @@ struct MetalBackgroundView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> MTKView {
-        let device = MTLCreateSystemDefaultDevice()!
+        guard let device = MTLCreateSystemDefaultDevice() else {
+            // Fallback: create basic view without Metal support
+            let fallbackView = MTKView()
+            print("MetalBackgroundView: Metal device not available, using fallback view")
+            return fallbackView
+        }
+        
         let mtkView = MTKView(frame: .zero, device: device)
         mtkView.isPaused = false
         mtkView.enableSetNeedsDisplay = false
         mtkView.preferredFramesPerSecond = 60
-        context.coordinator.renderer = MetalBackgroundRenderer(mtkView: mtkView, texture: texture)
-        context.coordinator.attachDisplayLink(to: mtkView)
+        
+        do {
+            context.coordinator.renderer = try MetalBackgroundRenderer(mtkView: mtkView, texture: texture)
+            context.coordinator.attachDisplayLink(to: mtkView)
+        } catch {
+            print("MetalBackgroundView: Failed to create MetalBackgroundRenderer - \(error)")
+            // Continue with the view, but without the renderer
+            // The view will still work but won't render the Metal background
+        }
+        
         return mtkView
     }
 
