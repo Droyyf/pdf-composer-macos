@@ -20,15 +20,19 @@ struct BrutalistLoadingView: View {
                 // Progress-based or spinning loader
                 ZStack {
                     if let progress = progress {
-                        // Progress ring
+                        // Background circle
                         Circle()
-                            .stroke(Color(DesignTokens.brutalistPrimary).opacity(0.3), lineWidth: 4)
-                            .frame(width: 60, height: 60)
+                            .stroke(Color(DesignTokens.brutalistPrimary).opacity(0.2), lineWidth: 3)
+                            .frame(width: 70, height: 70)
                         
+                        // Progress circle with proper cap style
                         Circle()
-                            .trim(from: 0, to: progress)
-                            .stroke(Color(DesignTokens.brutalistPrimary), lineWidth: 4)
-                            .frame(width: 60, height: 60)
+                            .trim(from: 0, to: min(progress, 1.0))
+                            .stroke(
+                                Color(DesignTokens.brutalistPrimary),
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                            )
+                            .frame(width: 70, height: 70)
                             .rotationEffect(.degrees(-90)) // Start from top
                             .animation(.easeInOut(duration: 0.3), value: progress)
                     } else {
@@ -45,34 +49,36 @@ struct BrutalistLoadingView: View {
                 .frame(width: 60, height: 60)
                 .drawingGroup() // Hardware acceleration for entire group
 
-                // Loading text
-                BrutalistHeading(
-                    text: "LOADING",
-                    size: 24,
-                    color: Color(DesignTokens.brutalistPrimary),
-                    tracking: 3.0,
-                    addStroke: false
-                )
-
-                // Progress or status text
-                if let progress = progress, let totalPages = totalPages {
-                    let currentPage = Int(progress * Double(totalPages))
-                    BrutalistTechnicalText(
-                        text: "LOADED \(Int(progress * 100))% • \(currentPage)/\(totalPages) PAGES",
-                        color: Color.white.opacity(0.7),
-                        size: 11,
-                        addDecorators: true,
-                        align: .center
+                // Loading text with progress
+                if let progress = progress {
+                    BrutalistHeading(
+                        text: "LOADING \(Int(progress * 100))%",
+                        size: 24,
+                        color: Color(DesignTokens.brutalistPrimary),
+                        tracking: 3.0,
+                        addStroke: false
                     )
-                } else if let progress = progress {
-                    BrutalistTechnicalText(
-                        text: "LOADED \(Int(progress * 100))% • PDF PROCESSING",
-                        color: Color.white.opacity(0.7),
-                        size: 11,
-                        addDecorators: true,
-                        align: .center
-                    )
+                    
+                    // Optional page details
+                    if let totalPages = totalPages {
+                        let currentPage = Int(progress * Double(totalPages))
+                        BrutalistTechnicalText(
+                            text: "\(currentPage)/\(totalPages) PAGES",
+                            color: Color.white.opacity(0.7),
+                            size: 11,
+                            addDecorators: true,
+                            align: .center
+                        )
+                    }
                 } else {
+                    BrutalistHeading(
+                        text: "LOADING",
+                        size: 24,
+                        color: Color(DesignTokens.brutalistPrimary),
+                        tracking: 3.0,
+                        addStroke: false
+                    )
+                    
                     BrutalistTechnicalText(
                         text: "PDF PROCESSING IN PROGRESS",
                         color: Color.white.opacity(0.7),
