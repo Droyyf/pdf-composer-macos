@@ -20,20 +20,21 @@ struct BrutalistLoadingView: View {
                 // Progress-based or spinning loader
                 ZStack {
                     if let progress = progress {
-                        // Ultra-simple circle approach
-                        ZStack {
-                            // Background circle
-                            RoundedRectangle(cornerRadius: 35)
-                                .stroke(Color(DesignTokens.brutalistPrimary).opacity(0.2), lineWidth: 3)
-                                .frame(width: 70, height: 70)
-                            
-                            // Progress using simple trim - but with different settings
-                            RoundedRectangle(cornerRadius: 35)
-                                .trim(from: 0.0, to: CGFloat(min(progress, 1.0)))
-                                .stroke(Color(DesignTokens.brutalistPrimary), lineWidth: 3)
-                                .frame(width: 70, height: 70)
-                                .rotationEffect(.degrees(-90))
-                                .animation(.linear(duration: 0.2), value: progress)
+                        // Clean capsule progress bar - much more reliable
+                        VStack(spacing: 8) {
+                            // Horizontal progress bar with rounded ends
+                            ZStack(alignment: .leading) {
+                                // Background track
+                                Capsule()
+                                    .fill(Color(DesignTokens.brutalistPrimary).opacity(0.2))
+                                    .frame(width: 100, height: 8)
+                                
+                                // Progress fill
+                                Capsule()
+                                    .fill(Color(DesignTokens.brutalistPrimary))
+                                    .frame(width: 100 * min(progress, 1.0), height: 8)
+                                    .animation(.easeInOut(duration: 0.3), value: progress)
+                            }
                         }
                     } else {
                         // Fallback: spinning bars when no progress available
