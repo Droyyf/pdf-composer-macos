@@ -442,7 +442,7 @@ struct ComposerTests {
         let coverImage = TestDataProvider.createTestImage()
         
         // Act
-        let (mergedDocument, mergeTime) = await TestHelpers.measureTime {
+        let (mergedDocument, mergeTime) = try await TestHelpers.measureTime {
             try await Composer.merge(
                 pages: pages,
                 cover: coverImage,

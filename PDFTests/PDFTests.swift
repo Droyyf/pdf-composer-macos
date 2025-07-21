@@ -18,7 +18,7 @@ struct ThumbnailServiceTests {
     @Test("ThumbnailService basic functionality")
     func testThumbnailServiceBasicFunctionality() async throws {
         // Arrange
-        let service = ThumbnailService()
+        let service = await ThumbnailService()
         let (document, _) = MockPDFGenerator.generatePDF(type: .simple(pageCount: 5))
         
         // Act
@@ -39,7 +39,7 @@ struct ThumbnailServiceTests {
     @Test("ThumbnailService batch loading")
     func testThumbnailServiceBatchLoading() async throws {
         // Arrange
-        let service = ThumbnailService()
+        let service = await ThumbnailService()
         let (document, _) = MockPDFGenerator.generatePDF(type: .simple(pageCount: 10))
         let pageIndices = [0, 2, 4, 6, 8]
         
@@ -63,7 +63,7 @@ struct ThumbnailServiceTests {
     @Test("ThumbnailService cache functionality")
     func testThumbnailServiceCacheFunctionality() async throws {
         // Arrange
-        let service = ThumbnailService()
+        let service = await ThumbnailService()
         let (document, _) = MockPDFGenerator.generatePDF(type: .simple(pageCount: 3))
         
         // Act - First load (cache miss)
@@ -81,7 +81,7 @@ struct ThumbnailServiceTests {
     @Test("ThumbnailService different quality options")
     func testThumbnailServiceQualityOptions() async throws {
         // Arrange
-        let service = ThumbnailService()
+        let service = await ThumbnailService()
         let (document, _) = MockPDFGenerator.generatePDF(type: .simple(pageCount: 1))
         
         let qualityOptions = [
@@ -106,11 +106,11 @@ struct ThumbnailServiceTests {
     @Test("ThumbnailService viewport preloading")
     func testThumbnailServiceViewportPreloading() async throws {
         // Arrange
-        let service = ThumbnailService()
+        let service = await ThumbnailService()
         let (document, _) = MockPDFGenerator.generatePDF(type: .simple(pageCount: 20))
         
         // Act - Preload first 5 pages
-        service.preloadThumbnailsForViewport(from: document!, startIndex: 0, count: 5)
+        await service.preloadThumbnailsForViewport(from: document!, startIndex: 0, count: 5)
         
         // Wait a moment for preloading to start
         try await Task.sleep(for: .milliseconds(500))
@@ -120,13 +120,14 @@ struct ThumbnailServiceTests {
         let isLoading = await service.isThumbnailLoading(pageIndex: 1)
         
         // Assert - At least some activity should be happening
-        #expect(cachedThumbnail != nil || isLoading)
+        let hasActivity = cachedThumbnail != nil || isLoading
+        #expect(hasActivity)
     }
     
     @Test("ThumbnailService legacy compatibility")
     func testThumbnailServiceLegacyCompatibility() async throws {
         // Arrange
-        let service = ThumbnailService()
+        let service = await ThumbnailService()
         let (document, _) = MockPDFGenerator.generatePDF(type: .simple(pageCount: 1))
         let size = CGSize(width: 100, height: 120)
         
@@ -141,7 +142,7 @@ struct ThumbnailServiceTests {
     @Test("ThumbnailService error handling")
     func testThumbnailServiceErrorHandling() async throws {
         // Arrange
-        let service = ThumbnailService()
+        let service = await ThumbnailService()
         let (document, _) = MockPDFGenerator.generatePDF(type: .simple(pageCount: 5))
         
         // Act - Request invalid page index
@@ -154,7 +155,7 @@ struct ThumbnailServiceTests {
     @Test("ThumbnailService cancel operations")
     func testThumbnailServiceCancelOperations() async throws {
         // Arrange
-        let service = ThumbnailService()
+        let service = await ThumbnailService()
         let (document, _) = MockPDFGenerator.generatePDF(type: .simple(pageCount: 10))
         
         // Start loading multiple thumbnails
@@ -167,13 +168,15 @@ struct ThumbnailServiceTests {
         try await Task.sleep(for: .milliseconds(100))
         
         // Act - Cancel operations
-        service.cancelAllLoading()
+        await service.cancelAllLoading()
         
         // Wait a moment
         try await Task.sleep(for: .milliseconds(200))
         
         // Assert - System should still be functional
         let quickResult = await service.loadThumbnail(from: document!, pageIndex: 0, options: .placeholder)
-        #expect(quickResult != nil || await service.isThumbnailLoading(pageIndex: 0))
+        let stillLoading = await service.isThumbnailLoading(pageIndex: 0)
+        let systemFunctional = quickResult != nil || stillLoading
+        #expect(systemFunctional)
     }
 }

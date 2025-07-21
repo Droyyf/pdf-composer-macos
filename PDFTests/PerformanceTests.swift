@@ -23,7 +23,7 @@ struct PerformanceTests {
             let (_, data) = MockPDFGenerator.generatePDF(type: .large(pageCount: testCase.pages))
             let url = MockPDFGenerator.writeToTemporaryFile(data: data!, filename: "\(testCase.name.lowercased()).pdf")!
             
-            let (document, loadTime) = await TestHelpers.measureTime {
+            let (document, loadTime) = try await TestHelpers.measureTime {
                 try await pdfService.open(url: url)
             }
             
@@ -116,7 +116,7 @@ struct PerformanceTests {
     
     @Test("Batch thumbnail generation performance")
     func testBatchThumbnailGenerationPerformance() async throws {
-        let thumbnailService = ThumbnailService()
+        let thumbnailService = await ThumbnailService()
         let (document, _) = MockPDFGenerator.generatePDF(type: .simple(pageCount: 50))
         
         let batchSizes = [5, 10, 20, 50]
@@ -256,7 +256,8 @@ struct PerformanceTests {
         
         // Cache should still be functional
         let testThumbnail = await thumbnailCache.getThumbnail(for: 0)
-        #expect(testThumbnail != nil || await thumbnailCache.isLoading(pageIndex: 0))
+        let isStillLoading = await thumbnailCache.isLoading(pageIndex: 0)
+        #expect(testThumbnail != nil || isStillLoading)
     }
     
     // MARK: - Document Composition Performance Tests
@@ -276,7 +277,7 @@ struct PerformanceTests {
         let coverImage = TestDataProvider.createTestImage(size: CGSize(width: 800, height: 1000))
         
         // Act
-        let (composedDoc, compositionTime) = await TestHelpers.measureTime {
+        let (composedDoc, compositionTime) = try await TestHelpers.measureTime {
             try await Composer.merge(
                 pages: allPages,
                 cover: coverImage,
@@ -310,7 +311,7 @@ struct PerformanceTests {
         let modes: [Composer.CompositionMode] = [.preview, .export]
         
         for mode in modes {
-            let (composedDoc, compositionTime) = await TestHelpers.measureTime {
+            let (composedDoc, compositionTime) = try await TestHelpers.measureTime {
                 try await Composer.merge(
                     pages: pages,
                     cover: largeCoverImage,
@@ -343,7 +344,7 @@ struct PerformanceTests {
             let exportURL = TestHelpers.createTemporaryTestDirectory()
                 .appendingPathComponent("export_test.\(format.rawValue.lowercased())")
             
-            let (_, exportTime) = await TestHelpers.measureTime {
+            let (_, exportTime) = try await TestHelpers.measureTime {
                 try await pdfService.export(document: document!, format: format, url: exportURL)
             }
             
@@ -408,7 +409,7 @@ struct PerformanceTests {
             let (_, data) = MockPDFGenerator.generatePDF(type: .large(pageCount: size))
             let url = MockPDFGenerator.writeToTemporaryFile(data: data!, filename: "security_test_\(size).pdf")!
             
-            let (_, validationTime) = await TestHelpers.measureTime {
+            let (_, validationTime) = try await TestHelpers.measureTime {
                 try await validator.validateFile(at: url)
             }
             
@@ -472,14 +473,14 @@ struct PerformanceTests {
     func testEndToEndWorkflowPerformance() async throws {
         // Simulate a complete user workflow
         let pdfService = PDFService()
-        let thumbnailService = ThumbnailService()
+        let thumbnailService = await ThumbnailService()
         let validator = PDFSecurityValidator()
         
         // Create test PDF
         let (_, data) = MockPDFGenerator.generatePDF(type: .simple(pageCount: 30))
         let url = MockPDFGenerator.writeToTemporaryFile(data: data!, filename: "workflow_test.pdf")!
         
-        let (_, totalTime) = await TestHelpers.measureTime {
+        let (_, totalTime) = try await TestHelpers.measureTime {
             // Step 1: Security validation
             try await validator.validateFile(at: url)
             
@@ -524,7 +525,7 @@ struct PerformanceTests {
     func testSystemStressTest() async throws {
         // This test simulates high load on the system
         let pdfService = PDFService()
-        let thumbnailService = ThumbnailService()
+        let thumbnailService = await ThumbnailService()
         
         let (document, _) = MockPDFGenerator.generatePDF(type: .large(pageCount: 100))
         let memoryBefore = TestHelpers.getMemoryUsage()

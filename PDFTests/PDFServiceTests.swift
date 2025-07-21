@@ -62,7 +62,7 @@ struct PDFServiceTests {
         let url = MockPDFGenerator.writeToTemporaryFile(data: data!, filename: "large.pdf")!
         
         // Act
-        let (document, loadTime) = await TestHelpers.measureTime {
+        let (document, loadTime) = try await TestHelpers.measureTime {
             try await pdfService.open(url: url)
         }
         
@@ -314,7 +314,7 @@ struct PDFServiceTests {
         let exportURL = testDirectory.appendingPathComponent("performance_test.pdf")
         
         // Act
-        let (_, exportTime) = await TestHelpers.measureTime {
+        let (_, exportTime) = try await TestHelpers.measureTime {
             try await pdfService.export(document: document!, format: .pdf, url: exportURL)
         }
         
@@ -481,7 +481,7 @@ struct PDFServicePerformanceTests {
             let (_, data) = MockPDFGenerator.generatePDF(type: .large(pageCount: pageCount))
             let url = MockPDFGenerator.writeToTemporaryFile(data: data!, filename: "benchmark_\(pageCount).pdf")!
             
-            let (document, loadTime) = await TestHelpers.measureTime {
+            let (document, loadTime) = try await TestHelpers.measureTime {
                 try await pdfService.open(url: url)
             }
             
