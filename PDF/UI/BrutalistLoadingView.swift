@@ -22,17 +22,17 @@ struct BrutalistLoadingView: View {
                     if let progress = progress {
                         // Background circle
                         Circle()
-                            .stroke(Color(DesignTokens.brutalistPrimary).opacity(0.2), lineWidth: 3)
-                            .frame(width: 70, height: 70)
+                            .stroke(Color(DesignTokens.brutalistPrimary).opacity(0.2), lineWidth: 4)
+                            .frame(width: 60, height: 60)
                         
-                        // Progress circle with proper cap style
+                        // Progress circle - simple continuous stroke
                         Circle()
                             .trim(from: 0, to: min(progress, 1.0))
                             .stroke(
                                 Color(DesignTokens.brutalistPrimary),
-                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                                style: StrokeStyle(lineWidth: 4, lineCap: .butt)
                             )
-                            .frame(width: 70, height: 70)
+                            .frame(width: 60, height: 60)
                             .rotationEffect(.degrees(-90)) // Start from top
                             .animation(.easeInOut(duration: 0.3), value: progress)
                     } else {
