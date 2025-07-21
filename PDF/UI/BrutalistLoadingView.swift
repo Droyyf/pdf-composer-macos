@@ -17,48 +17,41 @@ struct BrutalistLoadingView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 25) {
-                // Progress-based or spinning loader
-                ZStack {
-                    if let progress = progress {
-                        // Clean capsule progress bar - much more reliable
-                        VStack(spacing: 8) {
-                            // Horizontal progress bar with rounded ends
-                            ZStack(alignment: .leading) {
-                                // Background track
-                                Capsule()
-                                    .fill(Color(DesignTokens.brutalistPrimary).opacity(0.2))
-                                    .frame(width: 100, height: 8)
-                                
-                                // Progress fill
-                                Capsule()
-                                    .fill(Color(DesignTokens.brutalistPrimary))
-                                    .frame(width: 100 * min(progress, 1.0), height: 8)
-                                    .animation(.easeInOut(duration: 0.3), value: progress)
-                            }
-                        }
-                    } else {
-                        // Fallback: spinning bars when no progress available
-                        ForEach(0..<3, id: \.self) { index in
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(Color(DesignTokens.brutalistPrimary))
-                                .frame(width: 4, height: 30)
-                                .offset(y: -15)
-                                .rotationEffect(.degrees(rotation + Double(index * 120)))
-                        }
-                    }
-                }
-                .frame(width: 60, height: 60)
-                .drawingGroup() // Hardware acceleration for entire group
-
-                // Loading text with progress
+                // Loading text with integrated progress bar and percentage
                 if let progress = progress {
-                    BrutalistHeading(
-                        text: "LOADING \(Int(progress * 100))%",
-                        size: 24,
-                        color: Color(DesignTokens.brutalistPrimary),
-                        tracking: 3.0,
-                        addStroke: false
-                    )
+                    // LOADING text with progress bar and percentage on the same line
+                    HStack(spacing: 15) {
+                        BrutalistHeading(
+                            text: "LOADING",
+                            size: 24,
+                            color: Color(DesignTokens.brutalistPrimary),
+                            tracking: 3.0,
+                            addStroke: false
+                        )
+                        
+                        // Progress bar
+                        ZStack(alignment: .leading) {
+                            // Background track
+                            Rectangle()
+                                .fill(Color(DesignTokens.brutalistPrimary).opacity(0.2))
+                                .frame(width: 120, height: 8)
+                            
+                            // Progress fill
+                            Rectangle()
+                                .fill(Color(DesignTokens.brutalistPrimary))
+                                .frame(width: 120 * min(progress, 1.0), height: 8)
+                                .animation(.easeInOut(duration: 0.3), value: progress)
+                        }
+                        
+                        // Percentage text
+                        BrutalistHeading(
+                            text: "\(Int(progress * 100))%",
+                            size: 24,
+                            color: Color(DesignTokens.brutalistPrimary),
+                            tracking: 3.0,
+                            addStroke: false
+                        )
+                    }
                     
                     // Optional page details
                     if let totalPages = totalPages {
@@ -72,21 +65,36 @@ struct BrutalistLoadingView: View {
                         )
                     }
                 } else {
-                    BrutalistHeading(
-                        text: "LOADING",
-                        size: 24,
-                        color: Color(DesignTokens.brutalistPrimary),
-                        tracking: 3.0,
-                        addStroke: false
-                    )
-                    
-                    BrutalistTechnicalText(
-                        text: "PDF PROCESSING IN PROGRESS",
-                        color: Color.white.opacity(0.7),
-                        size: 11,
-                        addDecorators: true,
-                        align: .center
-                    )
+                    // Fallback: spinning bars when no progress available
+                    VStack(spacing: 20) {
+                        ZStack {
+                            ForEach(0..<3, id: \.self) { index in
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(Color(DesignTokens.brutalistPrimary))
+                                    .frame(width: 4, height: 30)
+                                    .offset(y: -15)
+                                    .rotationEffect(.degrees(rotation + Double(index * 120)))
+                            }
+                        }
+                        .frame(width: 60, height: 60)
+                        .drawingGroup() // Hardware acceleration for entire group
+                        
+                        BrutalistHeading(
+                            text: "LOADING",
+                            size: 24,
+                            color: Color(DesignTokens.brutalistPrimary),
+                            tracking: 3.0,
+                            addStroke: false
+                        )
+                        
+                        BrutalistTechnicalText(
+                            text: "PDF PROCESSING IN PROGRESS",
+                            color: Color.white.opacity(0.7),
+                            size: 11,
+                            addDecorators: true,
+                            align: .center
+                        )
+                    }
                 }
             }
             .offset(y: -30)

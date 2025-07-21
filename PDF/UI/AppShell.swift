@@ -48,6 +48,7 @@ class AppShellViewModel: ObservableObject {
 
     func loadPDF(from url: URL) async throws {
         isLoading = true
+        pdfLoadingProgress = 0.0
         print("DEBUG: Setting isLoading to true, current scene: \(selectedAppScene)")
 
         // Access security-scoped resource if needed
@@ -58,6 +59,9 @@ class AppShellViewModel: ObservableObject {
             }
         }
 
+        // Progress: Starting file validation (10%)
+        await MainActor.run { self.pdfLoadingProgress = 0.1 }
+
         // SECURITY: Validate file before processing
         let securityValidator = PDFSecurityValidator(configuration: .default)
         do {
@@ -66,6 +70,7 @@ class AppShellViewModel: ObservableObject {
         } catch let securityError as PDFSecurityError {
             await MainActor.run {
                 isLoading = false
+                pdfLoadingProgress = nil
                 print("DEBUG: PDF security validation failed: \(securityError.description)")
             }
             throw NSError(domain: "AppShellViewModel.Security", code: 100,
@@ -73,16 +78,21 @@ class AppShellViewModel: ObservableObject {
         } catch {
             await MainActor.run {
                 isLoading = false
+                pdfLoadingProgress = nil
                 print("DEBUG: PDF security validation error: \(error.localizedDescription)")
             }
             throw NSError(domain: "AppShellViewModel.Security", code: 101,
                           userInfo: [NSLocalizedDescriptionKey: "Security validation error: \(error.localizedDescription)"])
         }
 
+        // Progress: File validated, loading document (25%)
+        await MainActor.run { self.pdfLoadingProgress = 0.25 }
+
         // Create PDF document
         guard let document = PDFDocument(url: url) else {
             await MainActor.run {
                 isLoading = false
+                pdfLoadingProgress = nil
                 print("DEBUG: Failed to load PDF document")
             }
             throw NSError(domain: "AppShellViewModel", code: 1,
@@ -91,6 +101,9 @@ class AppShellViewModel: ObservableObject {
 
         print("DEBUG: PDF document created, processing \(document.pageCount) pages")
 
+        // Progress: Document loaded, validating content (40%)
+        await MainActor.run { self.pdfLoadingProgress = 0.4 }
+
         // SECURITY: Validate the loaded document for additional security checks
         do {
             try await securityValidator.validateDocument(document)
@@ -98,6 +111,7 @@ class AppShellViewModel: ObservableObject {
         } catch let securityError as PDFSecurityError {
             await MainActor.run {
                 isLoading = false
+                pdfLoadingProgress = nil
                 print("DEBUG: PDF document security validation failed: \(securityError.description)")
             }
             throw NSError(domain: "AppShellViewModel.Security", code: 102,
@@ -105,6 +119,7 @@ class AppShellViewModel: ObservableObject {
         } catch {
             await MainActor.run {
                 isLoading = false
+                pdfLoadingProgress = nil
                 print("DEBUG: PDF document security validation error: \(error.localizedDescription)")
             }
             throw NSError(domain: "AppShellViewModel.Security", code: 103,
@@ -115,11 +130,15 @@ class AppShellViewModel: ObservableObject {
         if document.pageCount == 0 {
             await MainActor.run {
                 isLoading = false
+                pdfLoadingProgress = nil
                 print("DEBUG: PDF has no pages")
             }
             throw NSError(domain: "AppShellViewModel", code: 2,
                           userInfo: [NSLocalizedDescriptionKey: "PDF has no pages."])
         }
+
+        // Progress: Document validated, starting thumbnail generation (60%)
+        await MainActor.run { self.pdfLoadingProgress = 0.6 }
 
         // Initialize thumbnails using centralized thumbnail service
         print("DEBUG: Starting batch thumbnail generation for \(document.pageCount) pages")
@@ -132,11 +151,14 @@ class AppShellViewModel: ObservableObject {
             options: .standard
         )
         
+        // Progress: Thumbnails generated, finalizing (90%)
+        await MainActor.run { self.pdfLoadingProgress = 0.9 }
+        
         // Convert to NSImage array, sorted by pageIndex
         let sortedResults = thumbnailResults.sorted { $0.pageIndex < $1.pageIndex }
         let generatedThumbnails = sortedResults.map { $0.image }
 
-        // Update the UI on the main thread
+        // Update the UI on the main thread - Complete (100%)
         await MainActor.run {
             print("DEBUG: Finished loading PDF, updating UI")
             self.pdfDocument = document
