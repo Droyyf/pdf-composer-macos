@@ -41,6 +41,7 @@ final class ThumbnailCache: NSObject, ObservableObject {
     private let placeholderCache = NSCache<NSNumber, NSImage>()
     private let queue = DispatchQueue(label: "thumbnail.generation", qos: .userInitiated, attributes: .concurrent)
     private var generationTasks: [Int: Task<ThumbnailResult?, Never>] = [:]
+    private var batchTasks: [UUID: Task<[ThumbnailResult], Never>] = [:]
     private var memoryPressureSource: DispatchSourceMemoryPressure?
     
     @Published var loadingStates: Set<Int> = []
@@ -65,9 +66,8 @@ final class ThumbnailCache: NSObject, ObservableObject {
         placeholderCache.countLimit = CacheConfig.defaultCapacity
         placeholderCache.totalCostLimit = CacheConfig.defaultCapacity * 80 * 100 * 4
         
-        // Set cache delegate for memory management
-        cache.delegate = self
-        placeholderCache.delegate = self
+        // Note: Cache delegates removed due to actor isolation
+        // Memory management will be handled through memory pressure monitoring
     }
     
     // MARK: - Memory Pressure Handling
@@ -78,8 +78,8 @@ final class ThumbnailCache: NSObject, ObservableObject {
         )
         
         memoryPressureSource?.setEventHandler { [weak self] in
-            Task { @MainActor [weak self] in
-                self?.handleMemoryPressure()
+            Task { [weak self] in
+                await self?.handleMemoryPressure()
             }
         }
         
@@ -126,34 +126,25 @@ final class ThumbnailCache: NSObject, ObservableObject {
             
             // Check if already cancelled
             guard !Task.isCancelled else {
-                _ = await MainActor.run {
-                    self.loadingStates.remove(pageIndex)
-                }
+                await self.cleanupLoadingState(for: pageIndex)
                 return nil
             }
             
             // Generate placeholder first for immediate feedback
             let placeholderImage = await self.generatePlaceholder(for: page)
-            await MainActor.run {
-                self.placeholderCache.setObject(placeholderImage, forKey: NSNumber(value: pageIndex))
-            }
+            await self.setPlaceholder(placeholderImage, for: pageIndex)
             
             // Check cancellation again
             guard !Task.isCancelled else {
-                _ = await MainActor.run {
-                    self.loadingStates.remove(pageIndex)
-                }
+                await self.cleanupLoadingState(for: pageIndex)
                 return nil
             }
             
             // Generate full resolution thumbnail
             let fullImage = await self.generateFullThumbnail(for: page)
             
-            await MainActor.run {
-                self.cache.setObject(fullImage, forKey: NSNumber(value: pageIndex))
-                self.loadingStates.remove(pageIndex)
-                self.generationTasks.removeValue(forKey: pageIndex)
-            }
+            // Store results atomically
+            await self.setThumbnail(fullImage, for: pageIndex)
             
             return ThumbnailResult(
                 pageIndex: pageIndex,
@@ -164,6 +155,22 @@ final class ThumbnailCache: NSObject, ObservableObject {
         }
         
         generationTasks[pageIndex] = task
+    }
+    
+    // MARK: - Thread-safe helper methods
+    private func cleanupLoadingState(for pageIndex: Int) {
+        loadingStates.remove(pageIndex)
+        generationTasks.removeValue(forKey: pageIndex)
+    }
+    
+    private func setPlaceholder(_ image: NSImage, for pageIndex: Int) {
+        placeholderCache.setObject(image, forKey: NSNumber(value: pageIndex))
+    }
+    
+    private func setThumbnail(_ image: NSImage, for pageIndex: Int) {
+        cache.setObject(image, forKey: NSNumber(value: pageIndex))
+        loadingStates.remove(pageIndex)
+        generationTasks.removeValue(forKey: pageIndex)
     }
     
     func preloadThumbnails(for pages: [PDFPage], startingAt index: Int, count: Int = 10) {
@@ -178,6 +185,97 @@ final class ThumbnailCache: NSObject, ObservableObject {
         }
     }
     
+    // MARK: - Batch Generation Methods
+    func generateThumbnailsBatch(
+        for pages: [(index: Int, page: PDFPage)],
+        priority: TaskPriority = .userInitiated,
+        batchSize: Int = 5
+    ) async -> (results: [ThumbnailResult], batchId: UUID) {
+        let batchId = UUID()
+        var results: [ThumbnailResult] = []
+        
+        let batchTask = Task(priority: priority) { () -> [ThumbnailResult] in
+            var batchResults: [ThumbnailResult] = []
+            
+            // Process in batches to prevent overwhelming the system
+            for batch in pages.chunked(into: batchSize) {
+                // Check for cancellation before each batch
+                guard !Task.isCancelled else { break }
+                
+                await withTaskGroup(of: ThumbnailResult?.self) { group in
+                    for (index, page) in batch {
+                        // Skip if already cached or loading
+                        if cache.object(forKey: NSNumber(value: index)) == nil &&
+                           !loadingStates.contains(index) {
+                            
+                            group.addTask { [weak self] in
+                                guard !Task.isCancelled else { return nil }
+                                return await self?.generateSingleThumbnail(
+                                    for: index,
+                                    from: page,
+                                    priority: priority
+                                )
+                            }
+                        }
+                    }
+                    
+                    for await result in group {
+                        guard !Task.isCancelled else { break }
+                        if let result = result {
+                            batchResults.append(result)
+                        }
+                    }
+                }
+            }
+            
+            return batchResults
+        }
+        
+        // Track the batch task
+        batchTasks[batchId] = batchTask
+        
+        // Wait for completion and cleanup
+        results = await batchTask.value
+        batchTasks.removeValue(forKey: batchId)
+        
+        return (results: results, batchId: batchId)
+    }
+    
+    private func generateSingleThumbnail(
+        for pageIndex: Int,
+        from page: PDFPage,
+        priority: TaskPriority
+    ) async -> ThumbnailResult? {
+        // Mark as loading
+        loadingStates.insert(pageIndex)
+        
+        defer {
+            // Clean up loading state
+            loadingStates.remove(pageIndex)
+        }
+        
+        // Check cancellation
+        guard !Task.isCancelled else { return nil }
+        
+        // Generate placeholder first
+        let placeholderImage = await generatePlaceholder(for: page)
+        await setPlaceholder(placeholderImage, for: pageIndex)
+        
+        // Check cancellation again
+        guard !Task.isCancelled else { return nil }
+        
+        // Generate full resolution thumbnail
+        let fullImage = await generateFullThumbnail(for: page)
+        await setThumbnail(fullImage, for: pageIndex)
+        
+        return ThumbnailResult(
+            pageIndex: pageIndex,
+            image: fullImage,
+            size: CacheConfig.thumbnailSize,
+            timestamp: Date()
+        )
+    }
+    
     func cancelGeneration(for pageIndex: Int) {
         generationTasks[pageIndex]?.cancel()
         generationTasks.removeValue(forKey: pageIndex)
@@ -185,11 +283,40 @@ final class ThumbnailCache: NSObject, ObservableObject {
     }
     
     func cancelAllTasks() {
+        // Cancel individual generation tasks
         for task in generationTasks.values {
             task.cancel()
         }
         generationTasks.removeAll()
+        
+        // Cancel batch tasks
+        for batchTask in batchTasks.values {
+            batchTask.cancel()
+        }
+        batchTasks.removeAll()
+        
         loadingStates.removeAll()
+    }
+    
+    // Cancel a specific batch of tasks
+    func cancelBatch(id: UUID) {
+        batchTasks[id]?.cancel()
+        batchTasks.removeValue(forKey: id)
+    }
+    
+    // Cancel tasks for a range of page indices
+    func cancelGenerationRange(from startIndex: Int, to endIndex: Int) {
+        for pageIndex in startIndex...endIndex {
+            cancelGeneration(for: pageIndex)
+        }
+    }
+    
+    func isLoading(pageIndex: Int) -> Bool {
+        return loadingStates.contains(pageIndex)
+    }
+    
+    func getLoadingStates() -> Set<Int> {
+        return loadingStates
     }
     
     func clearCache() {
@@ -218,93 +345,12 @@ final class ThumbnailCache: NSObject, ObservableObject {
     }
 }
 
-// MARK: - NSCacheDelegate
-extension ThumbnailCache: NSCacheDelegate {
-    nonisolated func cache(_ cache: NSCache<AnyObject, AnyObject>, willEvictObject obj: Any) {
-        // Called when cache is about to evict an object due to memory pressure
-        // This helps us track memory usage patterns
+// MARK: - Array Extension for Batching
+private extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
     }
 }
 
-// MARK: - Legacy LRU Cache (for backward compatibility)
-final class LRUCache<Key: Hashable, Value> {
-    private class Node {
-        let key: Key
-        var value: Value
-        var prev: Node?
-        var next: Node?
-        init(key: Key, value: Value) {
-            self.key = key
-            self.value = value
-        }
-    }
-    private let capacity: Int
-    private var dict: [Key: Node] = [:]
-    private var head: Node?
-    private var tail: Node?
-    private let cache = NSCache<WrappedKey, Entry>()
-
-    private class WrappedKey: NSObject {
-        let key: AnyHashable
-        init(_ key: AnyHashable) { self.key = key }
-        override var hash: Int { key.hashValue }
-        override func isEqual(_ object: Any?) -> Bool {
-            guard let other = object as? WrappedKey else { return false }
-            return key == other.key
-        }
-    }
-    private class Entry {
-        let value: Value
-        init(_ value: Value) { self.value = value }
-    }
-
-    init(capacity: Int) {
-        self.capacity = capacity
-        cache.countLimit = capacity
-    }
-
-    func get(_ key: Key) -> Value? {
-        if let node = dict[key] {
-            moveToHead(node)
-            return node.value
-        }
-        if let entry = cache.object(forKey: WrappedKey(key)) {
-            return entry.value
-        }
-        return nil
-    }
-
-    func set(_ key: Key, value: Value) {
-        if let node = dict[key] {
-            node.value = value
-            moveToHead(node)
-        } else {
-            let node = Node(key: key, value: value)
-            dict[key] = node
-            addToHead(node)
-            cache.setObject(Entry(value), forKey: WrappedKey(key))
-            if dict.count > capacity {
-                if let tail = tail {
-                    dict[tail.key] = nil
-                    removeNode(tail)
-                }
-            }
-        }
-    }
-
-    private func moveToHead(_ node: Node) {
-        removeNode(node)
-        addToHead(node)
-    }
-    private func addToHead(_ node: Node) {
-        node.next = head
-        node.prev = nil
-        head?.prev = node
-        head = node
-        if tail == nil { tail = node }
-    }
-    private func removeNode(_ node: Node) {
-        if let prev = node.prev { prev.next = node.next } else { head = node.next }
-        if let next = node.next { next.prev = node.prev } else { tail = node.prev }
-    }
-}
