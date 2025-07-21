@@ -2,7 +2,6 @@ import SwiftUI
 
 struct BrutalistLoadingView: View {
     @State private var rotation: Double = 0
-    @State private var innerRotation: Double = 0
 
     var body: some View {
         ZStack {
@@ -11,29 +10,18 @@ struct BrutalistLoadingView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 25) {
-                // High-performance smooth spinning loader
+                // Simple brutalist rotating bars loader
                 ZStack {
-                    // Main rotating ring with hardware-accelerated animation
-                    Circle()
-                        .stroke(Color(DesignTokens.brutalistPrimary), lineWidth: 3)
-                        .frame(width: 80, height: 80)
-                        .overlay(
-                            // Spinning indicator dot - fixed positioning
-                            Circle()
-                                .fill(Color(DesignTokens.brutalistPrimary))
-                                .frame(width: 8, height: 8)
-                                .offset(y: -40) // Properly positioned for 80pt circle
-                        )
-                        .rotationEffect(.degrees(rotation))
-                        .drawingGroup() // Hardware acceleration
-                    
-                    // Inner ring for dual rotation effect
-                    Circle()
-                        .stroke(Color(DesignTokens.brutalistPrimary).opacity(0.3), lineWidth: 2)
-                        .frame(width: 50, height: 50)
-                        .rotationEffect(.degrees(innerRotation))
-                        .drawingGroup() // Hardware acceleration
+                    // Three rotating bars at different angles
+                    ForEach(0..<3, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color(DesignTokens.brutalistPrimary))
+                            .frame(width: 4, height: 30)
+                            .offset(y: -15)
+                            .rotationEffect(.degrees(rotation + Double(index * 120)))
+                    }
                 }
+                .frame(width: 60, height: 60)
                 .drawingGroup() // Hardware acceleration for entire group
 
                 // Loading text
@@ -57,17 +45,13 @@ struct BrutalistLoadingView: View {
             .offset(y: -30)
         }
         .onAppear {
-            // Start continuous rotation animations
-            withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
+            // Start continuous rotation animation
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
                 rotation = 360
-            }
-            withAnimation(.linear(duration: 3.0).repeatForever(autoreverses: false)) {
-                innerRotation = -360
             }
         }
         .onDisappear {
             rotation = 0
-            innerRotation = 0
         }
         .preferredColorScheme(.dark) // Optimize for dark mode rendering
         .clipped() // Prevent unnecessary overdraw

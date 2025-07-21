@@ -481,19 +481,16 @@ struct BrutalistMiniLoader: View {
     
     var body: some View {
         ZStack {
-            // Main spinning circle
-            Circle()
-                .stroke(Color(DesignTokens.brutalistPrimary), lineWidth: 2)
-                .frame(width: 20, height: 20)
-                .overlay(
-                    // Spinning dot
-                    Circle()
-                        .fill(Color(DesignTokens.brutalistPrimary))
-                        .frame(width: 3, height: 3)
-                        .offset(y: -10)
-                )
-                .rotationEffect(.degrees(rotation))
+            // Simple rotating bars
+            ForEach(0..<3, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(Color(DesignTokens.brutalistPrimary))
+                    .frame(width: 2, height: 12)
+                    .offset(y: -6)
+                    .rotationEffect(.degrees(rotation + Double(index * 120)))
+            }
         }
+        .frame(width: 20, height: 20)
         .onAppear {
             withAnimation(.linear(duration: 1.0).repeatForever(autoreverses: false)) {
                 rotation = 360
