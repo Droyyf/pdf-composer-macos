@@ -385,49 +385,89 @@ struct AppShell: View {
         }
     }
     
-    // MARK: - Global Heavy Grain Overlay
+    // MARK: - Optimized Combined Texture Overlay
     
     @ViewBuilder
     private func globalHeavyGrainOverlay(geo: GeometryProxy) -> some View {
-        ZStack {
-            // Multiple layers of texture for heavy grain effect across entire app
+        // Combined texture rendering using Canvas for optimal GPU performance
+        Canvas { context, size in
+            // Create a single render pass combining all texture effects
             
-            // Layer 1: AccentTexture5 with maximum intensity for prominent grain
-            Image("AccentTexture5")
-                .resizable()
-                .scaledToFill()
-                .opacity(1.0)
-                .blendMode(.overlay)
-                .frame(width: geo.size.width, height: geo.size.height)
+            // Base layer setup
+            context.opacity = 1.0
             
-            // Layer 2: AccentTexture4 for additional depth and contrast
-            Image("AccentTexture4")
-                .resizable()
-                .scaledToFill()
-                .opacity(0.85)
-                .blendMode(.softLight)
-                .frame(width: geo.size.width, height: geo.size.height)
+            // Load texture images if available
+            if NSImage(named: "AccentTexture5") != nil,
+               NSImage(named: "AccentTexture4") != nil {
+                
+                let rect = CGRect(origin: .zero, size: size)
+                
+                // Layer 1: AccentTexture5 with overlay blend
+                context.blendMode = .overlay
+                context.opacity = 1.0
+                if let resolvedTexture5 = context.resolveSymbol(id: "texture5") {
+                    context.draw(resolvedTexture5, in: rect)
+                }
+                
+                // Layer 2: AccentTexture4 with soft light blend
+                context.blendMode = .softLight
+                context.opacity = 0.85
+                if let resolvedTexture4 = context.resolveSymbol(id: "texture4") {
+                    context.draw(resolvedTexture4, in: rect)
+                }
+            }
             
-            // Layer 3: Heavy programmatic grain pattern
-            BrutalistTexture(style: .grain, intensity: 1.0, color: .white)
-                .blendMode(.overlay)
-                .frame(width: geo.size.width, height: geo.size.height)
+            // Combined procedural texture effects
+            context.blendMode = .overlay
+            context.opacity = 0.6
             
-            // Layer 4: Distressed texture for brutalist feel
-            BrutalistTexture(style: .distressed, intensity: 0.8, color: .white)
-                .blendMode(.softLight)
-                .frame(width: geo.size.width, height: geo.size.height)
+            // Grain pattern simulation
+            let grainSize: CGFloat = 2.0
+            for x in stride(from: 0, to: size.width, by: grainSize) {
+                for y in stride(from: 0, to: size.height, by: grainSize) {
+                    let intensity = CGFloat.random(in: 0.3...1.0)
+                    context.fill(
+                        Path(CGRect(x: x, y: y, width: grainSize, height: grainSize)),
+                        with: .color(.white.opacity(intensity * 0.15))
+                    )
+                }
+            }
             
-            // Layer 5: Additional heavy noise pattern
-            BrutalistTexture(style: .noise, intensity: 1.0, color: .white)
-                .blendMode(.overlay)
-                .frame(width: geo.size.width, height: geo.size.height)
+            // Distressed texture simulation
+            context.blendMode = .softLight
+            context.opacity = 0.4
+            let distressPoints = Int(size.width * size.height / 5000)
+            for _ in 0..<distressPoints {
+                let x = CGFloat.random(in: 0...size.width)
+                let y = CGFloat.random(in: 0...size.height)
+                let radius = CGFloat.random(in: 0.5...2.0)
+                let intensity = CGFloat.random(in: 0.2...0.8)
+                
+                context.fill(
+                    Path(ellipseIn: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)),
+                    with: .color(.white.opacity(intensity * 0.2))
+                )
+            }
             
-            // Layer 6: AppKit-based heavy noise overlay with maximum intensity
-            NoisyOverlay(intensity: 4.0, asymmetric: true, blendingMode: "overlayBlendMode")
-                .frame(width: geo.size.width, height: geo.size.height)
-                .opacity(1.0)
+        } symbols: {
+            // Pre-resolved texture symbols for efficient rendering
+            if let texture5 = NSImage(named: "AccentTexture5") {
+                Image(nsImage: texture5)
+                    .resizable()
+                    .tag("texture5")
+            }
+            if let texture4 = NSImage(named: "AccentTexture4") {
+                Image(nsImage: texture4)
+                    .resizable()
+                    .tag("texture4")
+            }
         }
+        .frame(width: geo.size.width, height: geo.size.height)
+        .background(
+            // Fallback AppKit-based heavy noise for additional depth
+            NoisyOverlay(intensity: 2.0, asymmetric: true, blendingMode: "overlayBlendMode")
+                .opacity(0.6)
+        )
     }
 }
 

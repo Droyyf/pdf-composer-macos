@@ -582,6 +582,119 @@ struct BrutalistPDFKitView: NSViewRepresentable {
     }
 }
 
+// MARK: - Async Thumbnail Image Component
+struct AsyncThumbnailImage<Content: View, Placeholder: View, Failure: View>: View {
+    let pageIndex: Int
+    let page: PDFPage
+    let thumbnailCache: ThumbnailCache
+    let targetSize: CGSize
+    let content: (NSImage) -> Content
+    let placeholder: () -> Placeholder
+    let failure: (Error) -> Failure
+    
+    @State private var image: NSImage?
+    @State private var isLoading = false
+    @State private var error: Error?
+    
+    var body: some View {
+        Group {
+            if let image = image {
+                content(image)
+            } else if let error = error {
+                failure(error)
+            } else {
+                placeholder()
+            }
+        }
+        .onAppear {
+            loadThumbnail()
+        }
+        .onChange(of: pageIndex) { oldValue, newValue in
+            if oldValue != newValue {
+                loadThumbnail()
+            }
+        }
+    }
+    
+    private func loadThumbnail() {
+        guard !isLoading else { return }
+        
+        Task {
+            // Reset state
+            await MainActor.run {
+                error = nil
+                isLoading = true
+            }
+            
+            do {
+                // First try to get cached thumbnail
+                if let cachedImage = await thumbnailCache.getThumbnail(for: pageIndex) {
+                    await MainActor.run {
+                        self.image = cachedImage
+                        self.isLoading = false
+                    }
+                    return
+                }
+                
+                // Check for placeholder while generating
+                if let placeholder = await thumbnailCache.getPlaceholder(for: pageIndex) {
+                    await MainActor.run {
+                        self.image = placeholder
+                    }
+                }
+                
+                // Generate thumbnail asynchronously
+                await thumbnailCache.generateThumbnailAsync(
+                    for: pageIndex,
+                    from: page,
+                    priority: .userInitiated
+                )
+                
+                // Polling approach to get the generated thumbnail
+                // This could be improved with proper async callbacks in ThumbnailCache
+                for _ in 0..<50 { // Max 5 second wait with 100ms intervals
+                    try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                    
+                    if let generatedImage = await thumbnailCache.getThumbnail(for: pageIndex) {
+                        await MainActor.run {
+                            self.image = generatedImage
+                            self.isLoading = false
+                        }
+                        return
+                    }
+                }
+                
+                // If we get here, generation likely failed
+                await MainActor.run {
+                    self.error = ThumbnailError.generationTimeout
+                    self.isLoading = false
+                }
+                
+            } catch {
+                await MainActor.run {
+                    self.error = error
+                    self.isLoading = false
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Thumbnail Error Types
+enum ThumbnailError: LocalizedError {
+    case generationTimeout
+    case generationFailed(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .generationTimeout:
+            return "Thumbnail generation timed out"
+        case .generationFailed(let message):
+            return "Thumbnail generation failed: \(message)"
+        }
+    }
+}
+
 // Updated Thumbnail view component with selection support
 struct ThumbnailView: View {
     let index: Int
@@ -597,18 +710,67 @@ struct ThumbnailView: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            // Thumbnail image
+            // Optimized async thumbnail loading
             if let doc = document, let page = doc.page(at: index) {
                 ZStack {
-                    Image(nsImage: page.thumbnail(of: CGSize(width: 160, height: 200), for: .cropBox))
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(height: 120)
-                        .background(Color.white)
-                        .overlay(
+                    AsyncThumbnailImage(
+                        pageIndex: index,
+                        page: page,
+                        thumbnailCache: viewModel.thumbnailCache,
+                        targetSize: CGSize(width: 160, height: 200)
+                    ) { image in
+                        // Success state - show loaded thumbnail
+                        Image(nsImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(height: 120)
+                            .background(Color.white)
+                            .overlay(
+                                Rectangle()
+                                    .strokeBorder(index == currentPage && !selectionMode ? Color(DesignTokens.brutalistPrimary) : Color.clear, lineWidth: 2)
+                            )
+                    } placeholder: {
+                        // Loading/placeholder state
+                        ZStack {
                             Rectangle()
-                                .strokeBorder(index == currentPage && !selectionMode ? Color(DesignTokens.brutalistPrimary) : Color.clear, lineWidth: 2)
-                        )
+                                .fill(Color.gray.opacity(0.2))
+                                .frame(height: 120)
+                                .background(Color.white)
+                                .overlay(
+                                    Rectangle()
+                                        .strokeBorder(index == currentPage && !selectionMode ? Color(DesignTokens.brutalistPrimary) : Color.clear, lineWidth: 2)
+                                )
+                            
+                            // Brutalist loading indicator
+                            VStack(spacing: 2) {
+                                Image(systemName: "doc.text")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.gray)
+                                Text("Loading...")
+                                    .font(.system(size: 8, weight: .medium, design: .monospaced))
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    } failure: { error in
+                        // Error state - fallback to synchronous loading
+                        ZStack {
+                            Rectangle()
+                                .fill(Color.red.opacity(0.1))
+                                .frame(height: 120)
+                                .background(Color.white)
+                                .overlay(
+                                    Rectangle()
+                                        .strokeBorder(index == currentPage && !selectionMode ? Color(DesignTokens.brutalistPrimary) : Color.clear, lineWidth: 2)
+                                )
+                            
+                            // Fallback to synchronous thumbnail as last resort
+                            Image(nsImage: page.thumbnail(of: CGSize(width: 160, height: 200), for: .cropBox))
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(height: 120)
+                                .opacity(0.8)
+                        }
+                    }
 
                     // Selection indicators
                     if selectionMode {
