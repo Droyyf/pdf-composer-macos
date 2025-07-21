@@ -143,13 +143,36 @@ class AppShellViewModel: ObservableObject {
         // Initialize thumbnails using centralized thumbnail service
         print("DEBUG: Starting batch thumbnail generation for \(document.pageCount) pages")
         
-        // Generate thumbnails for all pages using the centralized service
+        // Generate thumbnails with progress tracking
         let pageIndices = Array(0..<document.pageCount)
-        let thumbnailResults = await thumbnailService.loadThumbnailsBatch(
-            from: document,
-            pageIndices: pageIndices,
-            options: .standard
-        )
+        let batchSize = 10 // Process in batches for better progress updates
+        var allThumbnailResults: [ThumbnailLoadingResult] = []
+        
+        let totalBatches = (pageIndices.count + batchSize - 1) / batchSize
+        for batchIndex in 0..<totalBatches {
+            let startIndex = batchIndex * batchSize
+            let endIndex = min(startIndex + batchSize, pageIndices.count)
+            let batchIndices = Array(pageIndices[startIndex..<endIndex])
+            
+            // Generate batch of thumbnails
+            let batchResults = await thumbnailService.loadThumbnailsBatch(
+                from: document,
+                pageIndices: batchIndices,
+                options: .standard
+            )
+            allThumbnailResults.append(contentsOf: batchResults)
+            
+            // Update progress during thumbnail generation (60% to 90%)
+            let batchProgress = Double(batchIndex + 1) / Double(totalBatches)
+            let currentProgress = 0.6 + (batchProgress * 0.3) // 60% + up to 30% more
+            await MainActor.run { 
+                self.pdfLoadingProgress = min(currentProgress, 0.9)
+                print("DEBUG: Thumbnail progress: batch \(batchIndex + 1)/\(totalBatches), progress: \(Int(currentProgress * 100))%")
+            }
+        }
+        
+        // Use the collected results
+        let thumbnailResults = allThumbnailResults
         
         // Progress: Thumbnails generated, finalizing (90%)
         await MainActor.run { self.pdfLoadingProgress = 0.9 }
