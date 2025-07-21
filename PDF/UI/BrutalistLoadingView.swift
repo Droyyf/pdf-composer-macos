@@ -20,21 +20,24 @@ struct BrutalistLoadingView: View {
                 // Progress-based or spinning loader
                 ZStack {
                     if let progress = progress {
-                        // Background circle
-                        Circle()
-                            .stroke(Color(DesignTokens.brutalistPrimary).opacity(0.2), lineWidth: 4)
-                            .frame(width: 60, height: 60)
-                        
-                        // Progress circle - simple continuous stroke
-                        Circle()
-                            .trim(from: 0, to: min(progress, 1.0))
-                            .stroke(
-                                Color(DesignTokens.brutalistPrimary),
-                                style: StrokeStyle(lineWidth: 4, lineCap: .butt)
-                            )
-                            .frame(width: 60, height: 60)
-                            .rotationEffect(.degrees(-90)) // Start from top
-                            .animation(.easeInOut(duration: 0.3), value: progress)
+                        // Progress circle using custom approach
+                        ZStack {
+                            // Background ring
+                            Circle()
+                                .stroke(Color(DesignTokens.brutalistPrimary).opacity(0.15), lineWidth: 5)
+                                .frame(width: 60, height: 60)
+                            
+                            // Progress ring with overlap to prevent gaps
+                            Circle()
+                                .trim(from: 0, to: min(max(progress, 0.01), 1.0)) // Minimum 1% to show start
+                                .stroke(
+                                    Color(DesignTokens.brutalistPrimary),
+                                    style: StrokeStyle(lineWidth: 5, lineCap: .square)
+                                )
+                                .frame(width: 60, height: 60)
+                                .rotationEffect(.degrees(-90)) // Start from top
+                                .animation(.easeInOut(duration: 0.3), value: progress)
+                        }
                     } else {
                         // Fallback: spinning bars when no progress available
                         ForEach(0..<3, id: \.self) { index in
