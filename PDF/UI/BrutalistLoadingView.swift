@@ -20,23 +20,20 @@ struct BrutalistLoadingView: View {
                 // Progress-based or spinning loader
                 ZStack {
                     if let progress = progress {
-                        // Custom circle progress using Path
+                        // Ultra-simple circle approach
                         ZStack {
-                            // Background circle - simple and clean
-                            Circle()
-                                .stroke(lineWidth: 4)
-                                .foregroundColor(Color(DesignTokens.brutalistPrimary).opacity(0.2))
+                            // Background circle
+                            RoundedRectangle(cornerRadius: 35)
+                                .stroke(Color(DesignTokens.brutalistPrimary).opacity(0.2), lineWidth: 3)
                                 .frame(width: 70, height: 70)
                             
-                            // Progress circle using custom path
-                            ProgressCircle(progress: progress)
-                                .stroke(
-                                    Color(DesignTokens.brutalistPrimary),
-                                    lineWidth: 4
-                                )
+                            // Progress using simple trim - but with different settings
+                            RoundedRectangle(cornerRadius: 35)
+                                .trim(from: 0.0, to: CGFloat(min(progress, 1.0)))
+                                .stroke(Color(DesignTokens.brutalistPrimary), lineWidth: 3)
                                 .frame(width: 70, height: 70)
                                 .rotationEffect(.degrees(-90))
-                                .animation(.easeInOut(duration: 0.3), value: progress)
+                                .animation(.linear(duration: 0.2), value: progress)
                         }
                     } else {
                         // Fallback: spinning bars when no progress available
@@ -107,28 +104,6 @@ struct BrutalistLoadingView: View {
     }
 }
 
-// MARK: - Custom Progress Circle Shape
-struct ProgressCircle: Shape {
-    let progress: Double
-    
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        let radius = min(rect.width, rect.height) / 2
-        let startAngle = Angle(degrees: 0)
-        let endAngle = Angle(degrees: 360 * progress)
-        
-        path.addArc(
-            center: center,
-            radius: radius,
-            startAngle: startAngle,
-            endAngle: endAngle,
-            clockwise: false
-        )
-        
-        return path
-    }
-}
 
 #Preview {
     VStack {
