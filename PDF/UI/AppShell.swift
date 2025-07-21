@@ -272,7 +272,10 @@ struct AppShell: View {
                     Group {
                         if viewModel.isLoading {
                             // Show loading view when isLoading is true
-                            BrutalistLoadingView()
+                            BrutalistLoadingView(
+                                progress: viewModel.pdfLoadingProgress,
+                                totalPages: viewModel.pdfDocument?.pageCount
+                            )
                                 .onAppear {
                                     print("DEBUG: Showing BrutalistLoadingView, isLoading: \(viewModel.isLoading)")
                                 }
@@ -300,7 +303,10 @@ struct AppShell: View {
                         } else {
                             // Loading or other scenes
                             ZStack {
-                                BrutalistLoadingView()
+                                BrutalistLoadingView(
+                                    progress: viewModel.pdfLoadingProgress,
+                                    totalPages: viewModel.pdfDocument?.pageCount
+                                )
                                     .onAppear {
                                         print("DEBUG: Showing fallback BrutalistLoadingView")
                                     }

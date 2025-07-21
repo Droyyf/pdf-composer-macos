@@ -387,9 +387,7 @@ struct OptimizedThumbnailView: View {
                     .overlay(
                         Group {
                             if isLoading {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                    .tint(Color(DesignTokens.brutalistPrimary))
+                                BrutalistMiniLoader()
                             } else {
                                 Image(systemName: "doc.text")
                                     .font(.title2)
@@ -473,6 +471,33 @@ struct OptimizedThumbnailView: View {
             selectedCover = nil
         } else {
             selectedCover = pageIndex
+        }
+    }
+}
+
+// MARK: - Brutalist Mini Loader
+struct BrutalistMiniLoader: View {
+    @State private var rotation: Double = 0
+    
+    var body: some View {
+        ZStack {
+            // Simple rotating bars
+            ForEach(0..<3, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(Color(DesignTokens.brutalistPrimary))
+                    .frame(width: 2, height: 12)
+                    .offset(y: -6)
+                    .rotationEffect(.degrees(rotation + Double(index * 120)))
+            }
+        }
+        .frame(width: 20, height: 20)
+        .onAppear {
+            withAnimation(.linear(duration: 1.0).repeatForever(autoreverses: false)) {
+                rotation = 360
+            }
+        }
+        .onDisappear {
+            rotation = 0
         }
     }
 }
