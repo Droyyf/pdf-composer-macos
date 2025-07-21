@@ -1,0 +1,30 @@
+default_platform(:mac)
+
+platform :mac do
+  desc "Build, codesign, notarize, and staple the app and dSYM"
+  lane :mac_notarize do |options|
+    app_path = options[:app_path]
+    apple_id = options[:apple_id]
+    team_id = options[:team_id]
+    api_key_path = options[:api_key_path]
+
+    build_app(
+      scheme: "AlmostBrutal",
+      export_method: "developer-id",
+      export_options: {
+        signingStyle: "automatic",
+        teamID: team_id
+      }
+    )
+
+    notarize(
+      package: app_path,
+      api_key_path: api_key_path,
+      api_key_id: "YOUR_KEY_ID",
+      issuer_id: "YOUR_ISSUER_ID"
+    )
+
+    sh("xcrun stapler staple \"#{app_path}\"")
+    sh("xcrun stapler staple \"#{app_path}.dSYM.zip\"")
+  end
+end
