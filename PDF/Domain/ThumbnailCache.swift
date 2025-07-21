@@ -24,8 +24,7 @@ actor ThumbnailGenerationTask {
 }
 
 // MARK: - Optimized Thumbnail Cache
-@MainActor
-final class ThumbnailCache: NSObject, ObservableObject {
+actor ThumbnailCache: ObservableObject {
     
     // MARK: - Cache Configuration
     private struct CacheConfig {
@@ -44,11 +43,10 @@ final class ThumbnailCache: NSObject, ObservableObject {
     private var batchTasks: [UUID: Task<[ThumbnailResult], Never>] = [:]
     private var memoryPressureSource: DispatchSourceMemoryPressure?
     
-    @Published var loadingStates: Set<Int> = []
+    private var loadingStates: Set<Int> = []
     
     // MARK: - Initialization
-    override init() {
-        super.init()
+    init() {
         setupCache()
         setupMemoryPressureHandling()
     }
