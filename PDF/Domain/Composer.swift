@@ -7,6 +7,12 @@ enum CoverPlacement: String, Codable, CaseIterable {
     case topLeft, top, topRight, left, center, right, bottomLeft, bottom, bottomRight
 }
 
+enum ExportFormat: String, CaseIterable, Identifiable {
+    case png = "PNG"
+    case pdf = "PDF"
+    var id: String { rawValue }
+}
+
 // MARK: - Composition Errors
 enum CompositionError: LocalizedError, Equatable {
     case emptyPageList

@@ -708,69 +708,73 @@ struct ThumbnailView: View {
     let onCitationToggle: (Int) -> Void
     let onCoverToggle: (Int) -> Void
 
+    // MARK: - Helper Views for Type Checker Performance
+    @ViewBuilder
+    private func thumbnailImageView(image: NSImage) -> some View {
+        Image(nsImage: image)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(height: 120)
+            .background(Color.white)
+            .overlay(thumbnailBorder)
+    }
+    
+    @ViewBuilder
+    private func thumbnailPlaceholderView() -> some View {
+        ZStack {
+            Rectangle()
+                .fill(Color.gray.opacity(0.2))
+                .frame(height: 120)
+                .background(Color.white)
+                .overlay(thumbnailBorder)
+            
+            VStack(spacing: 2) {
+                Image(systemName: "doc.text")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.gray)
+                Text("Loading...")
+                    .font(.system(size: 8, weight: .medium, design: .monospaced))
+                    .foregroundColor(.gray)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func thumbnailErrorView(page: PDFPage) -> some View {
+        ZStack {
+            Rectangle()
+                .fill(Color.red.opacity(0.1))
+                .frame(height: 120)
+                .background(Color.white)
+                .overlay(thumbnailBorder)
+            
+            Image(nsImage: page.thumbnail(of: CGSize(width: 160, height: 200), for: .cropBox))
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: 120)
+                .opacity(0.8)
+        }
+    }
+    
+    @ViewBuilder
+    private var thumbnailBorder: some View {
+        Rectangle()
+            .strokeBorder(
+                index == currentPage && !selectionMode ? Color(DesignTokens.brutalistPrimary) : Color.clear,
+                lineWidth: 2
+            )
+    }
+
     var body: some View {
         VStack(spacing: 4) {
             // Optimized async thumbnail loading
             if let doc = document, let page = doc.page(at: index) {
                 ZStack {
-                    AsyncThumbnailImage(
+                    ThumbnailImageView.standard(
+                        document: doc,
                         pageIndex: index,
-                        page: page,
-                        thumbnailCache: viewModel.thumbnailCache,
-                        targetSize: CGSize(width: 160, height: 200)
-                    ) { image in
-                        // Success state - show loaded thumbnail
-                        Image(nsImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(height: 120)
-                            .background(Color.white)
-                            .overlay(
-                                Rectangle()
-                                    .strokeBorder(index == currentPage && !selectionMode ? Color(DesignTokens.brutalistPrimary) : Color.clear, lineWidth: 2)
-                            )
-                    } placeholder: {
-                        // Loading/placeholder state
-                        ZStack {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.2))
-                                .frame(height: 120)
-                                .background(Color.white)
-                                .overlay(
-                                    Rectangle()
-                                        .strokeBorder(index == currentPage && !selectionMode ? Color(DesignTokens.brutalistPrimary) : Color.clear, lineWidth: 2)
-                                )
-                            
-                            // Brutalist loading indicator
-                            VStack(spacing: 2) {
-                                Image(systemName: "doc.text")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.gray)
-                                Text("Loading...")
-                                    .font(.system(size: 8, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.gray)
-                            }
-                        }
-                    } failure: { error in
-                        // Error state - fallback to synchronous loading
-                        ZStack {
-                            Rectangle()
-                                .fill(Color.red.opacity(0.1))
-                                .frame(height: 120)
-                                .background(Color.white)
-                                .overlay(
-                                    Rectangle()
-                                        .strokeBorder(index == currentPage && !selectionMode ? Color(DesignTokens.brutalistPrimary) : Color.clear, lineWidth: 2)
-                                )
-                            
-                            // Fallback to synchronous thumbnail as last resort
-                            Image(nsImage: page.thumbnail(of: CGSize(width: 160, height: 200), for: .cropBox))
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(height: 120)
-                                .opacity(0.8)
-                        }
-                    }
+                        thumbnailService: viewModel.thumbnailService
+                    )
 
                     // Selection indicators
                     if selectionMode {

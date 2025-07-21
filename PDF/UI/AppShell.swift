@@ -17,11 +17,6 @@ enum CompositionMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-enum ExportFormat: String, CaseIterable, Identifiable {
-    case png = "PNG"
-    case pdf = "PDF"
-    var id: String { rawValue }
-}
 
 @MainActor
 class AppShellViewModel: ObservableObject {
@@ -34,10 +29,9 @@ class AppShellViewModel: ObservableObject {
     // showPageSelection removed - page selection handled in BrutalistAppShell
     @Published var pdfLoadingProgress: Double? = nil
     
-    // Optimized thumbnail cache (actor-isolated)
-    let thumbnailCache = ThumbnailCache()
+    // Centralized thumbnail service
+    let thumbnailService = ThumbnailService()
     private var loadingTask: Task<Void, Never>? = nil
-    private var currentBatchId: UUID? = nil
 
     // Preview state
     @Published var showPreview: Bool = false {
@@ -127,37 +121,28 @@ class AppShellViewModel: ObservableObject {
                           userInfo: [NSLocalizedDescriptionKey: "PDF has no pages."])
         }
 
-        // Initialize thumbnails with async batch generation
-        print("DEBUG: Starting async batch thumbnail generation for \(document.pageCount) pages")
+        // Initialize thumbnails using centralized thumbnail service
+        print("DEBUG: Starting batch thumbnail generation for \(document.pageCount) pages")
         
-        // Prepare pages data for batch processing
-        var pagesData: [(index: Int, page: PDFPage)] = []
-        for i in 0..<document.pageCount {
-            if let page = document.page(at: i) {
-                pagesData.append((index: i, page: page))
-            }
-        }
-        
-        // Generate thumbnails in batches using TaskGroup with cancellation support
-        let (thumbnailResults, batchId) = await thumbnailCache.generateThumbnailsBatch(
-            for: pagesData
+        // Generate thumbnails for all pages using the centralized service
+        let pageIndices = Array(0..<document.pageCount)
+        let thumbnailResults = await thumbnailService.loadThumbnailsBatch(
+            from: document,
+            pageIndices: pageIndices,
+            options: .standard
         )
-        currentBatchId = batchId
         
-        // Convert ThumbnailResult to NSImage array, sorted by pageIndex
+        // Convert to NSImage array, sorted by pageIndex
         let sortedResults = thumbnailResults.sorted { $0.pageIndex < $1.pageIndex }
-        let placeholderThumbnails = sortedResults.map { $0.image }
+        let generatedThumbnails = sortedResults.map { $0.image }
 
         // Update the UI on the main thread
         await MainActor.run {
             print("DEBUG: Finished loading PDF, updating UI")
             self.pdfDocument = document
-            self.thumbnails = placeholderThumbnails
+            self.thumbnails = generatedThumbnails
             self.pdfLoadingProgress = 1.0
             self.isLoading = false
-            
-            // Clear batch tracking
-            self.currentBatchId = nil
 
             // Update scene state
             if self.showPreview {
@@ -183,31 +168,24 @@ class AppShellViewModel: ObservableObject {
         loadingTask?.cancel()
         loadingTask = nil
         
-        // Cancel current batch if running
-        if let batchId = currentBatchId {
-            Task {
-                await thumbnailCache.cancelBatch(id: batchId)
-            }
-            currentBatchId = nil
-        }
+        // Cancel thumbnail service operations
+        thumbnailService.cancelAllLoading()
+        thumbnailService.clearCache()
         
-        Task {
-            await thumbnailCache.clearCache()
-        }
         pdfDocument = nil
         thumbnails = []
         resetSelection()
     }
     
-    // Get optimized thumbnail for page
+    // Get optimized thumbnail for page using centralized service
     func getThumbnail(for pageIndex: Int) async -> NSImage? {
-        // Try to get full resolution thumbnail first
-        if let fullThumbnail = await thumbnailCache.getThumbnail(for: pageIndex) {
-            return fullThumbnail
+        // Try to get cached thumbnail first
+        if let cachedThumbnail = await thumbnailService.getCachedThumbnail(for: pageIndex) {
+            return cachedThumbnail
         }
         
-        // Fall back to placeholder if available
-        if let placeholder = await thumbnailCache.getPlaceholder(for: pageIndex) {
+        // Try placeholder
+        if let placeholder = await thumbnailService.getPlaceholderThumbnail(for: pageIndex) {
             return placeholder
         }
         
@@ -216,28 +194,34 @@ class AppShellViewModel: ObservableObject {
             return thumbnails[pageIndex]
         }
         
+        // If we have a document, try loading on-demand
+        if let document = pdfDocument {
+            let result = await thumbnailService.loadThumbnail(
+                from: document,
+                pageIndex: pageIndex,
+                options: .standard
+            )
+            return result?.image
+        }
+        
         return nil
     }
     
-    // Check if thumbnail is loading
+    // Check if thumbnail is loading using centralized service
     func isThumbnailLoading(_ pageIndex: Int) async -> Bool {
-        return await thumbnailCache.isLoading(pageIndex: pageIndex)
+        return await thumbnailService.isThumbnailLoading(pageIndex: pageIndex)
     }
     
-    // Preload thumbnails for viewport
+    // Preload thumbnails for viewport using centralized service
     func preloadThumbnailsForViewport(startIndex: Int, count: Int = 10) {
         guard let document = pdfDocument else { return }
         
-        let endIndex = min(startIndex + count, document.pageCount)
-        Task {
-            for i in startIndex..<endIndex {
-                if let page = document.page(at: i),
-                   await thumbnailCache.getThumbnail(for: i) == nil,
-                   !(await thumbnailCache.isLoading(pageIndex: i)) {
-                    await thumbnailCache.generateThumbnailAsync(for: i, from: page, priority: .utility)
-                }
-            }
-        }
+        thumbnailService.preloadThumbnailsForViewport(
+            from: document,
+            startIndex: startIndex,
+            count: count,
+            options: .standard
+        )
     }
 
     // Debug print the current state
@@ -248,8 +232,9 @@ class AppShellViewModel: ObservableObject {
         }
         print("Thumbnails: \(thumbnails.count)")
         Task {
-            let loadingStates = await thumbnailCache.getLoadingStates()
-            print("Loading States: \(loadingStates)")
+            let (loadingCount, cacheHitRate) = await thumbnailService.getCacheStatistics()
+            print("Thumbnail Loading Count: \(loadingCount)")
+            print("Cache Hit Rate: \(cacheHitRate)")
         }
         print("Citation Page Indices: \(citationPageIndices)")
         print("Cover Page Index: \(String(describing: coverPageIndex))")
