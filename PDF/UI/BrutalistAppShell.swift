@@ -586,7 +586,7 @@ struct BrutalistPDFKitView: NSViewRepresentable {
 struct AsyncThumbnailImage<Content: View, Placeholder: View, Failure: View>: View {
     let pageIndex: Int
     let page: PDFPage
-    let thumbnailCache: ThumbnailCache
+    let thumbnailService: ThumbnailService
     let targetSize: CGSize
     let content: (NSImage) -> Content
     let placeholder: () -> Placeholder
@@ -628,7 +628,7 @@ struct AsyncThumbnailImage<Content: View, Placeholder: View, Failure: View>: Vie
             
             do {
                 // First try to get cached thumbnail
-                if let cachedImage = await thumbnailCache.getThumbnail(for: pageIndex) {
+                if let cachedImage = await thumbnailService.getCachedThumbnail(for: pageIndex) {
                     await MainActor.run {
                         self.image = cachedImage
                         self.isLoading = false
@@ -637,37 +637,34 @@ struct AsyncThumbnailImage<Content: View, Placeholder: View, Failure: View>: Vie
                 }
                 
                 // Check for placeholder while generating
-                if let placeholder = await thumbnailCache.getPlaceholder(for: pageIndex) {
+                if let placeholder = await thumbnailService.getPlaceholderThumbnail(for: pageIndex) {
                     await MainActor.run {
                         self.image = placeholder
                     }
                 }
                 
-                // Generate thumbnail asynchronously
-                await thumbnailCache.generateThumbnailAsync(
-                    for: pageIndex,
-                    from: page,
+                // Load thumbnail using ThumbnailService
+                let loadingOptions = ThumbnailLoadingOptions(
+                    targetSize: targetSize,
+                    useCache: true,
                     priority: .userInitiated
                 )
                 
-                // Polling approach to get the generated thumbnail
-                // This could be improved with proper async callbacks in ThumbnailCache
-                for _ in 0..<50 { // Max 5 second wait with 100ms intervals
-                    try await Task.sleep(nanoseconds: 100_000_000) // 100ms
-                    
-                    if let generatedImage = await thumbnailCache.getThumbnail(for: pageIndex) {
-                        await MainActor.run {
-                            self.image = generatedImage
-                            self.isLoading = false
-                        }
-                        return
-                    }
-                }
+                let result = await thumbnailService.loadThumbnail(
+                    document: nil,
+                    pageIndex: pageIndex,
+                    page: page,
+                    options: loadingOptions
+                )
                 
-                // If we get here, generation likely failed
                 await MainActor.run {
-                    self.error = ThumbnailError.generationTimeout
-                    self.isLoading = false
+                    if let thumbnailImage = result.image {
+                        self.image = thumbnailImage
+                        self.isLoading = false
+                    } else {
+                        self.error = ThumbnailError.generationFailed("Failed to load thumbnail")
+                        self.isLoading = false
+                    }
                 }
                 
             } catch {
