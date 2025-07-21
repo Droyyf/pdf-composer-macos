@@ -17,22 +17,30 @@ struct BrutalistLoadingView: View {
                         .stroke(Color(DesignTokens.brutalistPrimary), lineWidth: 3)
                         .frame(width: 80, height: 80)
                         .overlay(
-                            // Spinning indicator dot
+                            // Spinning indicator dot - fixed positioning
                             Circle()
                                 .fill(Color(DesignTokens.brutalistPrimary))
-                                .frame(width: 6, height: 6)
-                                .offset(y: -37)
+                                .frame(width: 8, height: 8)
+                                .offset(y: -40) // Properly positioned for 80pt circle
                         )
                         .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
-                        .animation(.linear(duration: 2.0).repeatForever(autoreverses: false), value: isAnimating)
+                        .animation(
+                            Animation.linear(duration: 1.5)
+                                .repeatForever(autoreverses: false),
+                            value: isAnimating
+                        )
                         .drawingGroup() // Hardware acceleration
                     
                     // Inner ring for dual rotation effect
                     Circle()
-                        .stroke(Color(DesignTokens.brutalistPrimary).opacity(0.4), lineWidth: 2)
+                        .stroke(Color(DesignTokens.brutalistPrimary).opacity(0.3), lineWidth: 2)
                         .frame(width: 50, height: 50)
-                        .rotationEffect(Angle(degrees: isAnimating ? -360 : 0))
-                        .animation(.linear(duration: 3.0).repeatForever(autoreverses: false), value: isAnimating)
+                        .rotationEffect(Angle(degrees: isAnimating ? -270 : 0))
+                        .animation(
+                            Animation.linear(duration: 2.5)
+                                .repeatForever(autoreverses: false),
+                            value: isAnimating
+                        )
                         .drawingGroup() // Hardware acceleration
                 }
                 .drawingGroup() // Hardware acceleration for entire group
@@ -58,10 +66,13 @@ struct BrutalistLoadingView: View {
             .offset(y: -30)
         }
         .onAppear {
-            // Ensure smooth 60fps animation
-            DispatchQueue.main.async {
+            // Start animation immediately with proper timing
+            withAnimation {
                 isAnimating = true
             }
+        }
+        .onDisappear {
+            isAnimating = false
         }
         .preferredColorScheme(.dark) // Optimize for dark mode rendering
         .clipped() // Prevent unnecessary overdraw
