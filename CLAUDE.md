@@ -91,3 +91,33 @@ This is a macOS-native PDF composer app built with Swift 5.9, SwiftUI, PDFKit, a
 - Viewport-based thumbnail preloading
 - Metal rendering for smooth background effects
 - Task-based concurrency with proper memory management
+
+## GitHub Repository Management
+
+**Repository**: https://github.com/Droyyf/pdf-composer-macos (Private)
+
+### Branch Workflow Rules
+When working on this PDF project, Claude Code must follow this GitHub workflow:
+
+1. **All edits go to feature branches** - Never commit directly to main
+2. **Descriptive branch names** - Use format: `feature/description-of-edit` (e.g., `feature/fix-layout-responsiveness`, `feature/add-export-formats`)
+3. **Descriptive commit messages** - Each commit should clearly describe what was changed and why
+4. **Feature branch workflow**:
+   ```bash
+   # Create descriptive feature branch
+   git checkout -b feature/your-edit-description
+   
+   # Make changes and commit with clear message
+   git add .
+   git commit -m "Descriptive commit message explaining the change"
+   
+   # Push to feature branch
+   git push -u origin feature/your-edit-description
+   ```
+5. **Wait for approval** - Only merge to main when user gives explicit approval
+6. **Branch cleanup** - Delete feature branches after successful merge to main
+
+### Current Setup
+- Main branch contains the complete, working codebase
+- Feature branches are used for all development work
+- Repository is private for project security
