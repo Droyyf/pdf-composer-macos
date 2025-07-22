@@ -46,5 +46,23 @@
             </dict>
         </dict>
     </array>
+    <key>NSSupportsAutomaticTermination</key>
+    <true/>
+    <key>NSSupportsSuddenTermination</key>
+    <true/>
+    <key>INIntentsSupported</key>
+    <array>
+        <string>ComposePDFIntent</string>
+        <string>BatchProcessIntent</string>
+        <string>ExportPDFIntent</string>
+    </array>
+    <key>NSUserActivityTypes</key>
+    <array>
+        <string>ComposePDFIntent</string>
+        <string>BatchProcessIntent</string>
+        <string>ExportPDFIntent</string>
+    </array>
+    <key>NSShortcutsAppName</key>
+    <string>PDF Composer</string>
 </dict>
 </plist>

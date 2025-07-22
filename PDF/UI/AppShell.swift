@@ -9,6 +9,7 @@ enum AppScene: Hashable {
     case preview
     case mainMenu
     case batchProcessing
+    case pluginManager
     // pageSelection removed - handled in BrutalistAppShell
 }
 
@@ -36,6 +37,15 @@ class AppShellViewModel: ObservableObject {
     // PDF service for batch processing and other operations
     let pdfService = PDFService()
     
+    // Plugin system integration
+    @Published var showingPluginManager = false
+    @Published var showingPluginInstaller = false
+    @Published var showingPluginErrors = false
+    
+    let pluginManager = PluginManager()
+    let pluginErrorHandler: PluginErrorHandler
+    let pluginMenuIntegration: PluginMenuIntegration
+    
     private var loadingTask: Task<Void, Never>? = nil
 
     // Preview state
@@ -50,6 +60,56 @@ class AppShellViewModel: ObservableObject {
     @Published var exportFormat: ExportFormat = .png
     @Published var coverPosition: CGPoint = CGPoint(x: 0.5, y: 0.5) // Center by default
     @Published var coverSize: CGSize = CGSize(width: 0.3, height: 0.3) // 30% of citation size by default
+
+    init() {
+        // Initialize plugin system components
+        self.pluginErrorHandler = PluginErrorHandler(pluginManager: pluginManager)
+        self.pluginMenuIntegration = PluginMenuIntegration(pluginManager: pluginManager)
+        
+        setupPluginSystemIntegration()
+    }
+    
+    private func setupPluginSystemIntegration() {
+        // Set up notification observers for plugin UI integration
+        NotificationCenter.default.addObserver(
+            forName: .showPluginManager,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.showingPluginManager = true
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: .showPluginInstaller,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.showingPluginInstaller = true
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: .showPluginErrors,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.showingPluginErrors = true
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: .reloadPlugins,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task {
+                await self?.pluginManager.scanForPlugins()
+            }
+        }
+        
+        // Start plugin discovery
+        Task {
+            await pluginManager.scanForPlugins()
+        }
+    }
 
     func loadPDF(from url: URL) async throws {
         isLoading = true
@@ -381,6 +441,11 @@ struct AppShell: View {
                                 .onAppear {
                                     print("DEBUG: Showing BatchProcessingView")
                                 }
+                        } else if viewModel.selectedAppScene == .pluginManager {
+                            PluginManagerView()
+                                .onAppear {
+                                    print("DEBUG: Showing PluginManagerView")
+                                }
                         // .pageSelection scene removed - page selection is handled in BrutalistAppShell
                         } else if viewModel.showPreview || viewModel.selectedAppScene == .preview {
                             // Prioritize showing preview when either property is set
@@ -422,6 +487,16 @@ struct AppShell: View {
         }
         .onChange(of: viewModel.isLoading) { oldValue, newValue in
             print("DEBUG: isLoading changed from \(oldValue) to \(newValue)")
+        }
+        // Plugin UI integration
+        .sheet(isPresented: $viewModel.showingPluginManager) {
+            PluginManagerView()
+        }
+        .sheet(isPresented: $viewModel.showingPluginInstaller) {
+            PluginInstallerView(pluginManager: viewModel.pluginManager)
+        }
+        .sheet(isPresented: $viewModel.showingPluginErrors) {
+            PluginErrorView()
         }
     }
     

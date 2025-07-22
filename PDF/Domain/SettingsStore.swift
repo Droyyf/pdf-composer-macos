@@ -8,6 +8,13 @@ struct Settings: Codable {
     var recentFileCount: Int = 5
     var autosaveInterval: TimeInterval = 60
     var logLevel: String = "info"
+    
+    // Cloud storage settings
+    var cloudStorageEnabled: Bool = true
+    var defaultCloudProvider: String? = nil
+    var autoUploadEnabled: Bool = false
+    var cloudBackupEnabled: Bool = false
+    var syncSettings: Bool = false
 }
 
 final class SettingsStore: ObservableObject {
