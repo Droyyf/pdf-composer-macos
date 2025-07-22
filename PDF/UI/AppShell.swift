@@ -2,6 +2,9 @@ import SwiftUI
 @preconcurrency import PDFKit
 import MetalKit
 
+// Import ExportFormat from ExportService
+typealias ExportFormat = ExportService.ExportFormat
+
 // Add scene enum
 enum AppScene: Hashable {
     case loading
@@ -13,11 +16,8 @@ enum AppScene: Hashable {
     // pageSelection removed - handled in BrutalistAppShell
 }
 
-enum CompositionMode: String, CaseIterable, Identifiable {
-    case sideBySide = "Side by Side"
-    case custom = "Custom"
-    var id: String { rawValue }
-}
+// CompositionMode is defined in ExportService.swift as a global enum
+// typealias CompositionMode = CompositionMode // Not needed since it's already global
 
 
 @MainActor
@@ -56,8 +56,8 @@ class AppShellViewModel: ObservableObject {
             }
         }
     }
-    @Published var compositionMode: CompositionMode = .custom
-    @Published var exportFormat: ExportFormat = .png
+    @Published var compositionMode: CompositionMode = .centerCitation
+    @Published var exportFormat: ExportService.ExportFormat = .png
     @Published var coverPosition: CGPoint = CGPoint(x: 0.5, y: 0.5) // Center by default
     @Published var coverSize: CGSize = CGSize(width: 0.3, height: 0.3) // 30% of citation size by default
 

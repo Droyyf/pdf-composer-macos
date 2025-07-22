@@ -2,147 +2,81 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>INEnums</key>
-	<array>
-		<dict>
-			<key>INEnumDisplayName</key>
-			<string>Cover Placement</string>
-			<key>INEnumDisplayNameID</key>
-			<string>CoverPlacementDisplayName</string>
-			<key>INEnumName</key>
-			<string>CoverPlacement</string>
-			<key>INEnumType</key>
-			<string>Regular</string>
-			<key>INCodable</key>
-			<true/>
-			<key>INEnumCases</key>
-			<array>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Top Left</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>topLeft</string>
-					<key>INEnumCaseName</key>
-					<string>topLeft</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Top</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>top</string>
-					<key>INEnumCaseName</key>
-					<string>top</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Top Right</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>topRight</string>
-					<key>INEnumCaseName</key>
-					<string>topRight</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Left</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>left</string>
-					<key>INEnumCaseName</key>
-					<string>left</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Center</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>center</string>
-					<key>INEnumCaseName</key>
-					<string>center</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Right</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>right</string>
-					<key>INEnumCaseName</key>
-					<string>right</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Bottom Left</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>bottomLeft</string>
-					<key>INEnumCaseName</key>
-					<string>bottomLeft</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Bottom</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>bottom</string>
-					<key>INEnumCaseName</key>
-					<string>bottom</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Bottom Right</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>bottomRight</string>
-					<key>INEnumCaseName</key>
-					<string>bottomRight</string>
-				</dict>
-			</array>
-		</dict>
-	</array>
 	<key>INIntentDefinitionModelVersion</key>
 	<string>1.2</string>
 	<key>INIntentDefinitionNamespace</key>
 	<string>88xZPY</string>
 	<key>INIntentDefinitionSystemVersion</key>
-	<string>24A348</string>
+	<string>21A559</string>
 	<key>INIntentDefinitionToolsBuildVersion</key>
-	<string>16A242d</string>
+	<string>13A1030d</string>
 	<key>INIntentDefinitionToolsVersion</key>
-	<string>16.0</string>
+	<string>13.0</string>
 	<key>INIntents</key>
 	<array>
 		<dict>
 			<key>INIntentCategory</key>
 			<string>create</string>
-			<key>INIntentConfigurable</key>
-			<true/>
 			<key>INIntentDescription</key>
-			<string>Compose multiple PDF files into a single document with optional cover image</string>
+			<string>Compose PDF documents with optional cover placement</string>
 			<key>INIntentDescriptionID</key>
-			<string>ComposePDFDescription</string>
+			<string>gpCwrM</string>
 			<key>INIntentEligibleForWidgets</key>
-			<false/>
+			<true/>
 			<key>INIntentIneligibleForSuggestions</key>
 			<false/>
-			<key>INIntentManagedParameterCombinations</key>
+			<key>INIntentName</key>
+			<string>ComposePDFIntent</string>
+			<key>INIntentParameterCombinations</key>
 			<dict>
-				<key>coverImage,coverPlacement</key>
+				<key>citationPages,coverPlacement,title</key>
 				<dict>
 					<key>INIntentParameterCombinationSupportsBackgroundExecution</key>
 					<true/>
+					<key>INIntentParameterCombinationTitle</key>
+					<string>Compose PDF with Citation Pages</string>
+					<key>INIntentParameterCombinationTitleID</key>
+					<string>INyJQD</string>
+				</dict>
+				<key>citationPages,title</key>
+				<dict>
+					<key>INIntentParameterCombinationSupportsBackgroundExecution</key>
+					<true/>
+					<key>INIntentParameterCombinationTitle</key>
+					<string>Compose PDF from Citation Pages</string>
+					<key>INIntentParameterCombinationTitleID</key>
+					<string>Mn2kGh</string>
 				</dict>
 			</dict>
-			<key>INIntentName</key>
-			<string>ComposePDFIntent</string>
 			<key>INIntentParameters</key>
 			<array>
 				<dict>
 					<key>INIntentParameterConfigurable</key>
 					<true/>
 					<key>INIntentParameterDisplayName</key>
-					<string>PDF Files</string>
+					<string>Citation Pages</string>
 					<key>INIntentParameterDisplayNameID</key>
-					<string>pdfFilesDisplayName</string>
+					<string>Vh3tYs</string>
 					<key>INIntentParameterName</key>
-					<string>pdfFiles</string>
-					<key>INIntentParameterSupportsMultipleValues</key>
-					<true/>
+					<string>citationPages</string>
+					<key>INIntentParameterPromptDialogs</key>
+					<array>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Configuration</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Primary</string>
+						</dict>
+					</array>
 					<key>INIntentParameterSupportedTypeIdentifiers</key>
 					<array>
-						<string>com.adobe.pdf</string>
+						<string>public.data</string>
 					</array>
 					<key>INIntentParameterTag</key>
 					<integer>1</integer>
@@ -153,47 +87,86 @@
 					<key>INIntentParameterConfigurable</key>
 					<true/>
 					<key>INIntentParameterDisplayName</key>
-					<string>Cover Image</string>
+					<string>Cover Placement</string>
 					<key>INIntentParameterDisplayNameID</key>
-					<string>coverImageDisplayName</string>
+					<string>mN5tRd</string>
 					<key>INIntentParameterName</key>
-					<string>coverImage</string>
-					<key>INIntentParameterSupportedTypeIdentifiers</key>
+					<string>coverPlacement</string>
+					<key>INIntentParameterPromptDialogs</key>
 					<array>
-						<string>public.image</string>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Configuration</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Primary</string>
+						</dict>
 					</array>
 					<key>INIntentParameterTag</key>
 					<integer>2</integer>
 					<key>INIntentParameterType</key>
-					<string>File</string>
+					<string>String</string>
+					<key>INIntentParameterFixedOptionsSupported</key>
+					<true/>
+					<key>INIntentParameterFixedOptions</key>
+					<array>
+						<dict>
+							<key>INIntentParameterFixedOptionDisplayName</key>
+							<string>Before Citation Pages</string>
+							<key>INIntentParameterFixedOptionDisplayNameID</key>
+							<string>bT7gHk</string>
+							<key>INIntentParameterFixedOptionValue</key>
+							<string>before</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterFixedOptionDisplayName</key>
+							<string>After Citation Pages</string>
+							<key>INIntentParameterFixedOptionDisplayNameID</key>
+							<string>aR9mLp</string>
+							<key>INIntentParameterFixedOptionValue</key>
+							<string>after</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterFixedOptionDisplayName</key>
+							<string>No Cover</string>
+							<key>INIntentParameterFixedOptionDisplayNameID</key>
+							<string>nC3xQw</string>
+							<key>INIntentParameterFixedOptionValue</key>
+							<string>none</string>
+						</dict>
+					</array>
 				</dict>
 				<dict>
 					<key>INIntentParameterConfigurable</key>
 					<true/>
 					<key>INIntentParameterDisplayName</key>
-					<string>Cover Placement</string>
+					<string>Title</string>
 					<key>INIntentParameterDisplayNameID</key>
-					<string>coverPlacementDisplayName</string>
-					<key>INIntentParameterEnumType</key>
-					<string>CoverPlacement</string>
+					<string>tL8nYm</string>
 					<key>INIntentParameterName</key>
-					<string>coverPlacement</string>
+					<string>title</string>
+					<key>INIntentParameterPromptDialogs</key>
+					<array>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Configuration</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Primary</string>
+						</dict>
+					</array>
 					<key>INIntentParameterTag</key>
 					<integer>3</integer>
-					<key>INIntentParameterType</key>
-					<string>Integer</string>
-				</dict>
-				<dict>
-					<key>INIntentParameterConfigurable</key>
-					<true/>
-					<key>INIntentParameterDisplayName</key>
-					<string>Output File Name</string>
-					<key>INIntentParameterDisplayNameID</key>
-					<string>outputFileNameDisplayName</string>
-					<key>INIntentParameterName</key>
-					<string>outputFileName</string>
-					<key>INIntentParameterTag</key>
-					<integer>4</integer>
 					<key>INIntentParameterType</key>
 					<string>String</string>
 				</dict>
@@ -221,56 +194,32 @@
 						<false/>
 					</dict>
 				</array>
-				<key>INIntentResponseLastParameterTag</key>
-				<integer>3</integer>
+				<key>INIntentResponseOutput</key>
+				<string>composedPDF</string>
 				<key>INIntentResponseParameters</key>
 				<array>
 					<dict>
 						<key>INIntentResponseParameterDisplayName</key>
-						<string>Result File</string>
+						<string>Composed PDF</string>
 						<key>INIntentResponseParameterDisplayNameID</key>
-						<string>resultFileDisplayName</string>
+						<string>dF6hJs</string>
 						<key>INIntentResponseParameterName</key>
-						<string>resultFile</string>
+						<string>composedPDF</string>
 						<key>INIntentResponseParameterSupportedTypeIdentifiers</key>
 						<array>
-							<string>com.adobe.pdf</string>
+							<string>public.data</string>
 						</array>
 						<key>INIntentResponseParameterTag</key>
 						<integer>1</integer>
 						<key>INIntentResponseParameterType</key>
 						<string>File</string>
 					</dict>
-					<dict>
-						<key>INIntentResponseParameterDisplayName</key>
-						<string>Page Count</string>
-						<key>INIntentResponseParameterDisplayNameID</key>
-						<string>pageCountDisplayName</string>
-						<key>INIntentResponseParameterName</key>
-						<string>pageCount</string>
-						<key>INIntentResponseParameterTag</key>
-						<integer>2</integer>
-						<key>INIntentResponseParameterType</key>
-						<string>Integer</string>
-					</dict>
-					<dict>
-						<key>INIntentResponseParameterDisplayName</key>
-						<string>Error Message</string>
-						<key>INIntentResponseParameterDisplayNameID</key>
-						<string>errorMessageDisplayName</string>
-						<key>INIntentResponseParameterName</key>
-						<string>errorMessage</string>
-						<key>INIntentResponseParameterTag</key>
-						<integer>3</integer>
-						<key>INIntentResponseParameterType</key>
-						<string>String</string>
-					</dict>
 				</array>
 			</dict>
 			<key>INIntentTitle</key>
 			<string>Compose PDF</string>
 			<key>INIntentTitleID</key>
-			<string>ComposePDFTitle</string>
+			<string>uQnpM0</string>
 			<key>INIntentType</key>
 			<string>Custom</string>
 			<key>INIntentVerb</key>

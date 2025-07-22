@@ -3,6 +3,8 @@ import Intents
 import PDFKit
 import AppKit
 
+/*
+// Shortcuts integration temporarily disabled until IntentDefinition files are properly integrated
 @available(macOS 11.0, *)
 class BatchProcessIntentHandler: NSObject, BatchProcessIntentHandling {
     
@@ -340,6 +342,7 @@ class BatchProcessIntentHandler: NSObject, BatchProcessIntentHandling {
         completion(response)
     }
 }
+*/
 
 // MARK: - Supporting Types
 

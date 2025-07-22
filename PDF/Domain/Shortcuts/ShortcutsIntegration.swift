@@ -72,6 +72,8 @@ class ShortcutsIntegration {
     func donateCompositionActivity(fileCount: Int, hascover: Bool) {
         guard #available(macOS 11.0, *) else { return }
         
+        /*
+        // Temporarily disabled until IntentDefinition files are properly integrated
         let intent = ComposePDFIntent()
         intent.suggestedInvocationPhrase = hascover ? "Compose PDF with cover" : "Compose PDF files"
         
@@ -81,12 +83,15 @@ class ShortcutsIntegration {
                 print("Failed to donate composition activity: \(error.localizedDescription)")
             }
         }
+        */
     }
     
     /// Donate a batch processing activity for Shortcuts suggestions
     func donateBatchProcessActivity(fileCount: Int, operations: [String]) {
         guard #available(macOS 11.0, *) else { return }
         
+        /*
+        // Temporarily disabled until IntentDefinition files are properly integrated
         let intent = BatchProcessIntent()
         intent.suggestedInvocationPhrase = "Batch process PDFs"
         
@@ -96,12 +101,15 @@ class ShortcutsIntegration {
                 print("Failed to donate batch process activity: \(error.localizedDescription)")
             }
         }
+        */
     }
     
     /// Donate an export activity for Shortcuts suggestions
     func donateExportActivity(format: String) {
         guard #available(macOS 11.0, *) else { return }
         
+        /*
+        // Temporarily disabled until IntentDefinition files are properly integrated
         let intent = ExportPDFIntent()
         intent.suggestedInvocationPhrase = "Export PDF as \(format)"
         
@@ -111,5 +119,6 @@ class ShortcutsIntegration {
                 print("Failed to donate export activity: \(error.localizedDescription)")
             }
         }
+        */
     }
 }

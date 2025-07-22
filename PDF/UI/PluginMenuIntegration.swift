@@ -256,10 +256,9 @@ private struct PluginActionInfo {
 }
 
 // MARK: - Notification Extensions
+// Plugin notification names are defined in AppCommands.swift
 
 extension Notification.Name {
-    static let showPluginManager = Notification.Name("showPluginManager")
-    static let showPluginInstaller = Notification.Name("showPluginInstaller")
     static let pluginDidLoad = Notification.Name("pluginDidLoad")
     static let pluginDidUnload = Notification.Name("pluginDidUnload")
 }

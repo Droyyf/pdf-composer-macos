@@ -416,7 +416,7 @@ protocol PluginResourceManager {
 
 // MARK: - Plugin Errors
 
-enum PluginError: LocalizedError, CustomStringConvertible {
+enum PluginError: LocalizedError, CustomStringConvertible, Codable, Hashable {
     case invalidMetadata(String)
     case incompatibleVersion(required: PluginVersionRequirement, found: PluginVersion)
     case missingCapability(PluginCapabilities)

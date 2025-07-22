@@ -201,17 +201,7 @@ struct BrutalistText: View {
     }
 }
 
-// Extension to conditionally apply modifiers
-extension View {
-    @ViewBuilder
-    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
-        if condition {
-            transform(self)
-        } else {
-            self
-        }
-    }
-}
+// View extension for conditional modifiers is already defined in ColorExtensions.swift
 
 #Preview {
     ZStack {

@@ -102,7 +102,7 @@ actor PDFService {
         }
     }
 
-    func export(document: PDFDocument, format: ExportFormat, url: URL, quality: CGFloat = 0.9) async throws {
+    func export(document: PDFDocument, format: ExportService.ExportFormat, url: URL, quality: CGFloat = 0.9) async throws {
         try await Task.detached(priority: .userInitiated) {
             switch format {
             case .pdf:
@@ -127,6 +127,25 @@ actor PDFService {
                 // Use specified quality for PNG compression
                 let compressionFactor = NSNumber(value: Float(1.0 - quality))
                 guard let output = bitmap.representation(using: .png, properties: [.compressionFactor: compressionFactor]) else {
+                    throw NSError(domain: "PDFService", code: 6, userInfo: [NSLocalizedDescriptionKey: "Failed to encode image."])
+                }
+                try output.write(to: url)
+            case .jpeg:
+                guard let page = document.page(at: 0) else {
+                    throw NSError(domain: "PDFService", code: 3, userInfo: [NSLocalizedDescriptionKey: "No page to export."])
+                }
+                
+                let image = autoreleasepool {
+                    return page.thumbnail(of: CGSize(width: 2480, height: 3508), for: .mediaBox)
+                }
+                
+                guard let tiffData = image.tiffRepresentation,
+                      let bitmap = NSBitmapImageRep(data: tiffData) else {
+                    throw NSError(domain: "PDFService", code: 5, userInfo: [NSLocalizedDescriptionKey: "Failed to create image representation."])
+                }
+                
+                let compressionFactor = NSNumber(value: Float(1.0 - quality))
+                guard let output = bitmap.representation(using: .jpeg, properties: [.compressionFactor: compressionFactor]) else {
                     throw NSError(domain: "PDFService", code: 6, userInfo: [NSLocalizedDescriptionKey: "Failed to encode image."])
                 }
                 try output.write(to: url)

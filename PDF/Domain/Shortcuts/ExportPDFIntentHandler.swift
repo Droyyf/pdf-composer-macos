@@ -3,6 +3,8 @@ import Intents
 import PDFKit
 import AppKit
 
+/*
+// Shortcuts integration temporarily disabled until IntentDefinition files are properly integrated
 @available(macOS 11.0, *)
 class ExportPDFIntentHandler: NSObject, ExportPDFIntentHandling {
     
@@ -367,10 +369,11 @@ class ExportPDFIntentHandler: NSObject, ExportPDFIntentHandling {
         completion(response)
     }
 }
+*/
 
 // MARK: - Supporting Types
 
-enum ExportError: LocalizedError {
+enum IntentExportError: LocalizedError {
     case unsupportedFormat
     case noPages
     case imageConversionFailed

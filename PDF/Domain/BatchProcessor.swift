@@ -31,7 +31,7 @@ enum BatchJobStatus: String, Codable, CaseIterable {
 }
 
 struct BatchProcessingOptions: Codable {
-    var outputFormat: ExportFormat = .pdf
+    var outputFormat: ExportService.ExportFormat = .pdf
     var compressionQuality: Double = 0.9
     var downsampleImages: Bool = true
     var maxImageDPI: Double = 300
@@ -464,7 +464,7 @@ actor BatchProcessor {
         return jobs.compactMap { $0.outputFileSize }.reduce(0, +)
     }
     
-    private func exportDocument(_ document: PDFDocument, to url: URL, format: ExportFormat, quality: Double) async throws {
+    private func exportDocument(_ document: PDFDocument, to url: URL, format: ExportService.ExportFormat, quality: Double) async throws {
         try await pdfService.export(document: document, format: format, url: url, quality: CGFloat(quality))
     }
     

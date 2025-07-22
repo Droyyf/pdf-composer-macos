@@ -1,6 +1,13 @@
 import Foundation
 import OSLog
 
+/// File access modes for sandbox operations
+enum SandboxFileAccessMode {
+    case read
+    case write
+    case readWrite
+}
+
 /// Manager for creating and maintaining secure sandboxed environments for plugin execution
 class PluginSandboxManager {
     
@@ -28,7 +35,7 @@ class PluginSandboxManager {
         // Clean up any existing sandboxes on startup
         cleanupAllSandboxes()
         
-        logger.info("PluginSandboxManager initialized with root directory: \(sandboxRootDirectory.path)")
+        logger.info("PluginSandboxManager initialized with root directory: \(self.sandboxRootDirectory.path)")
     }
     
     deinit {
@@ -395,8 +402,8 @@ extension PluginSandboxManager {
         }
     }
     
-    /// Create a restricted file handle for sandbox operations
-    func createRestrictedFileHandle(for fileURL: URL, in sandbox: PluginSandbox, mode: FileHandle.AccessMode) throws -> FileHandle {
+    /// Create a restricted file handle for sandbox operations  
+    func createRestrictedFileHandle(for fileURL: URL, in sandbox: PluginSandbox, mode: SandboxFileAccessMode) throws -> FileHandle {
         // Validate file access
         try validateFileAccess(fileURL, sandbox: sandbox)
         

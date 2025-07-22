@@ -22,7 +22,7 @@ final class ExportService: ObservableObject {
         case cloud(CloudUploadRequest, CloudAccount)
     }
     
-    enum ExportFormat: String, CaseIterable {
+    enum ExportFormat: String, CaseIterable, Codable {
         case pdf = "pdf"
         case png = "png"
         case jpeg = "jpeg"

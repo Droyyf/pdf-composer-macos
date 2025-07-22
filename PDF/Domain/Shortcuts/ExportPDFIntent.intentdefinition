@@ -2,138 +2,61 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>INEnums</key>
-	<array>
-		<dict>
-			<key>INEnumDisplayName</key>
-			<string>Export Format</string>
-			<key>INEnumDisplayNameID</key>
-			<string>ExportFormatDisplayName</string>
-			<key>INEnumName</key>
-			<string>ExportFormat</string>
-			<key>INEnumType</key>
-			<string>Regular</string>
-			<key>INCodable</key>
-			<true/>
-			<key>INEnumCases</key>
-			<array>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>PDF</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>pdf</string>
-					<key>INEnumCaseName</key>
-					<string>pdf</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>PNG</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>png</string>
-					<key>INEnumCaseName</key>
-					<string>png</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>JPEG</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>jpeg</string>
-					<key>INEnumCaseName</key>
-					<string>jpeg</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>WebP</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>webp</string>
-					<key>INEnumCaseName</key>
-					<string>webp</string>
-				</dict>
-			</array>
-		</dict>
-		<dict>
-			<key>INEnumDisplayName</key>
-			<string>Export Destination</string>
-			<key>INEnumDisplayNameID</key>
-			<string>ExportDestinationDisplayName</string>
-			<key>INEnumName</key>
-			<string>ExportDestination</string>
-			<key>INEnumType</key>
-			<string>Regular</string>
-			<key>INCodable</key>
-			<true/>
-			<key>INEnumCases</key>
-			<array>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Files App</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>files</string>
-					<key>INEnumCaseName</key>
-					<string>files</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Desktop</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>desktop</string>
-					<key>INEnumCaseName</key>
-					<string>desktop</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Documents</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>documents</string>
-					<key>INEnumCaseName</key>
-					<string>documents</string>
-				</dict>
-				<dict>
-					<key>INEnumCaseDisplayName</key>
-					<string>Custom Directory</string>
-					<key>INEnumCaseDisplayNameID</key>
-					<string>custom</string>
-					<key>INEnumCaseName</key>
-					<string>custom</string>
-				</dict>
-			</array>
-		</dict>
-	</array>
 	<key>INIntentDefinitionModelVersion</key>
 	<string>1.2</string>
 	<key>INIntentDefinitionNamespace</key>
 	<string>88xZPY</string>
 	<key>INIntentDefinitionSystemVersion</key>
-	<string>24A348</string>
+	<string>21A559</string>
 	<key>INIntentDefinitionToolsBuildVersion</key>
-	<string>16A242d</string>
+	<string>13A1030d</string>
 	<key>INIntentDefinitionToolsVersion</key>
-	<string>16.0</string>
+	<string>13.0</string>
 	<key>INIntents</key>
 	<array>
 		<dict>
 			<key>INIntentCategory</key>
 			<string>create</string>
-			<key>INIntentConfigurable</key>
-			<true/>
 			<key>INIntentDescription</key>
-			<string>Export PDF to various formats and destinations with quality settings</string>
+			<string>Export PDF to various formats including PNG, JPEG, and WebP</string>
 			<key>INIntentDescriptionID</key>
-			<string>ExportPDFDescription</string>
+			<string>epCwrM</string>
 			<key>INIntentEligibleForWidgets</key>
-			<false/>
+			<true/>
 			<key>INIntentIneligibleForSuggestions</key>
 			<false/>
-			<key>INIntentManagedParameterCombinations</key>
+			<key>INIntentName</key>
+			<string>ExportPDFIntent</string>
+			<key>INIntentParameterCombinations</key>
 			<dict>
-				<key>pdfFile,format,destination</key>
+				<key>pdfFile,exportFormat,quality</key>
 				<dict>
 					<key>INIntentParameterCombinationSupportsBackgroundExecution</key>
 					<true/>
+					<key>INIntentParameterCombinationTitle</key>
+					<string>Export PDF with Quality Settings</string>
+					<key>INIntentParameterCombinationTitleID</key>
+					<string>EPyJQD</string>
+				</dict>
+				<key>pdfFile,exportFormat</key>
+				<dict>
+					<key>INIntentParameterCombinationSupportsBackgroundExecution</key>
+					<true/>
+					<key>INIntentParameterCombinationTitle</key>
+					<string>Export PDF to Format</string>
+					<key>INIntentParameterCombinationTitleID</key>
+					<string>EP2kGh</string>
+				</dict>
+				<key>pdfFile</key>
+				<dict>
+					<key>INIntentParameterCombinationSupportsBackgroundExecution</key>
+					<true/>
+					<key>INIntentParameterCombinationTitle</key>
+					<string>Export PDF</string>
+					<key>INIntentParameterCombinationTitleID</key>
+					<string>EP3mNk</string>
 				</dict>
 			</dict>
-			<key>INIntentName</key>
-			<string>ExportPDFIntent</string>
 			<key>INIntentParameters</key>
 			<array>
 				<dict>
@@ -142,12 +65,27 @@
 					<key>INIntentParameterDisplayName</key>
 					<string>PDF File</string>
 					<key>INIntentParameterDisplayNameID</key>
-					<string>pdfFileDisplayName</string>
+					<string>EPVh3tYs</string>
 					<key>INIntentParameterName</key>
 					<string>pdfFile</string>
+					<key>INIntentParameterPromptDialogs</key>
+					<array>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Configuration</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Primary</string>
+						</dict>
+					</array>
 					<key>INIntentParameterSupportedTypeIdentifiers</key>
 					<array>
-						<string>com.adobe.pdf</string>
+						<string>public.data</string>
 					</array>
 					<key>INIntentParameterTag</key>
 					<integer>1</integer>
@@ -160,49 +98,65 @@
 					<key>INIntentParameterDisplayName</key>
 					<string>Export Format</string>
 					<key>INIntentParameterDisplayNameID</key>
-					<string>formatDisplayName</string>
-					<key>INIntentParameterEnumType</key>
-					<string>ExportFormat</string>
+					<string>EPmN5tRd</string>
 					<key>INIntentParameterName</key>
-					<string>format</string>
+					<string>exportFormat</string>
+					<key>INIntentParameterPromptDialogs</key>
+					<array>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Configuration</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Primary</string>
+						</dict>
+					</array>
 					<key>INIntentParameterTag</key>
 					<integer>2</integer>
 					<key>INIntentParameterType</key>
-					<string>Integer</string>
-				</dict>
-				<dict>
-					<key>INIntentParameterConfigurable</key>
+					<string>String</string>
+					<key>INIntentParameterFixedOptionsSupported</key>
 					<true/>
-					<key>INIntentParameterDisplayName</key>
-					<string>Destination</string>
-					<key>INIntentParameterDisplayNameID</key>
-					<string>destinationDisplayName</string>
-					<key>INIntentParameterEnumType</key>
-					<string>ExportDestination</string>
-					<key>INIntentParameterName</key>
-					<string>destination</string>
-					<key>INIntentParameterTag</key>
-					<integer>3</integer>
-					<key>INIntentParameterType</key>
-					<string>Integer</string>
-				</dict>
-				<dict>
-					<key>INIntentParameterConfigurable</key>
-					<true/>
-					<key>INIntentParameterDisplayName</key>
-					<string>Custom Directory</string>
-					<key>INIntentParameterDisplayNameID</key>
-					<string>customDirectoryDisplayName</string>
-					<key>INIntentParameterName</key>
-					<string>customDirectory</string>
-					<key>INIntentParameterSupportedTypeIdentifiers</key>
+					<key>INIntentParameterFixedOptions</key>
 					<array>
-						<string>public.folder</string>
+						<dict>
+							<key>INIntentParameterFixedOptionDisplayName</key>
+							<string>PDF</string>
+							<key>INIntentParameterFixedOptionDisplayNameID</key>
+							<string>EPbT7gHk</string>
+							<key>INIntentParameterFixedOptionValue</key>
+							<string>pdf</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterFixedOptionDisplayName</key>
+							<string>PNG</string>
+							<key>INIntentParameterFixedOptionDisplayNameID</key>
+							<string>EPaR9mLp</string>
+							<key>INIntentParameterFixedOptionValue</key>
+							<string>png</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterFixedOptionDisplayName</key>
+							<string>JPEG</string>
+							<key>INIntentParameterFixedOptionDisplayNameID</key>
+							<string>EPnC3xQw</string>
+							<key>INIntentParameterFixedOptionValue</key>
+							<string>jpeg</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterFixedOptionDisplayName</key>
+							<string>WebP</string>
+							<key>INIntentParameterFixedOptionDisplayNameID</key>
+							<string>EPwB4yRt</string>
+							<key>INIntentParameterFixedOptionValue</key>
+							<string>webp</string>
+						</dict>
 					</array>
-					<key>INIntentParameterTag</key>
-					<integer>4</integer>
-					<key>INIntentParameterType</key>
-					<string>File</string>
 				</dict>
 				<dict>
 					<key>INIntentParameterConfigurable</key>
@@ -210,36 +164,57 @@
 					<key>INIntentParameterDisplayName</key>
 					<string>Quality</string>
 					<key>INIntentParameterDisplayNameID</key>
-					<string>qualityDisplayName</string>
+					<string>EPtL8nYm</string>
 					<key>INIntentParameterName</key>
 					<string>quality</string>
+					<key>INIntentParameterPromptDialogs</key>
+					<array>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Configuration</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterPromptDialogCustom</key>
+							<true/>
+							<key>INIntentParameterPromptDialogType</key>
+							<string>Primary</string>
+						</dict>
+					</array>
 					<key>INIntentParameterTag</key>
-					<integer>5</integer>
-					<key>INIntentParameterType</key>
-					<string>Decimal</string>
-					<key>INIntentParameterMetadata</key>
-					<dict>
-						<key>INIntentParameterMetadataDefaultValue</key>
-						<real>0.9</real>
-						<key>INIntentParameterMetadataMinimumValue</key>
-						<real>0.1</real>
-						<key>INIntentParameterMetadataMaximumValue</key>
-						<real>1.0</real>
-					</dict>
-				</dict>
-				<dict>
-					<key>INIntentParameterConfigurable</key>
-					<true/>
-					<key>INIntentParameterDisplayName</key>
-					<string>Output File Name</string>
-					<key>INIntentParameterDisplayNameID</key>
-					<string>outputFileNameDisplayName</string>
-					<key>INIntentParameterName</key>
-					<string>outputFileName</string>
-					<key>INIntentParameterTag</key>
-					<integer>6</integer>
+					<integer>3</integer>
 					<key>INIntentParameterType</key>
 					<string>String</string>
+					<key>INIntentParameterFixedOptionsSupported</key>
+					<true/>
+					<key>INIntentParameterFixedOptions</key>
+					<array>
+						<dict>
+							<key>INIntentParameterFixedOptionDisplayName</key>
+							<string>Low</string>
+							<key>INIntentParameterFixedOptionDisplayNameID</key>
+							<string>EPqL5rHj</string>
+							<key>INIntentParameterFixedOptionValue</key>
+							<string>low</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterFixedOptionDisplayName</key>
+							<string>Medium</string>
+							<key>INIntentParameterFixedOptionDisplayNameID</key>
+							<string>EPmE6sIk</string>
+							<key>INIntentParameterFixedOptionValue</key>
+							<string>medium</string>
+						</dict>
+						<dict>
+							<key>INIntentParameterFixedOptionDisplayName</key>
+							<string>High</string>
+							<key>INIntentParameterFixedOptionDisplayNameID</key>
+							<string>EPhG7tJl</string>
+							<key>INIntentParameterFixedOptionValue</key>
+							<string>high</string>
+						</dict>
+					</array>
 				</dict>
 			</array>
 			<key>INIntentResponse</key>
@@ -265,52 +240,32 @@
 						<false/>
 					</dict>
 				</array>
-				<key>INIntentResponseLastParameterTag</key>
-				<integer>3</integer>
+				<key>INIntentResponseOutput</key>
+				<string>exportedFile</string>
 				<key>INIntentResponseParameters</key>
 				<array>
 					<dict>
 						<key>INIntentResponseParameterDisplayName</key>
 						<string>Exported File</string>
 						<key>INIntentResponseParameterDisplayNameID</key>
-						<string>exportedFileDisplayName</string>
+						<string>EPdF6hJs</string>
 						<key>INIntentResponseParameterName</key>
 						<string>exportedFile</string>
+						<key>INIntentResponseParameterSupportedTypeIdentifiers</key>
+						<array>
+							<string>public.data</string>
+						</array>
 						<key>INIntentResponseParameterTag</key>
 						<integer>1</integer>
 						<key>INIntentResponseParameterType</key>
 						<string>File</string>
-					</dict>
-					<dict>
-						<key>INIntentResponseParameterDisplayName</key>
-						<string>File Size</string>
-						<key>INIntentResponseParameterDisplayNameID</key>
-						<string>fileSizeDisplayName</string>
-						<key>INIntentResponseParameterName</key>
-						<string>fileSize</string>
-						<key>INIntentResponseParameterTag</key>
-						<integer>2</integer>
-						<key>INIntentResponseParameterType</key>
-						<string>String</string>
-					</dict>
-					<dict>
-						<key>INIntentResponseParameterDisplayName</key>
-						<string>Error Message</string>
-						<key>INIntentResponseParameterDisplayNameID</key>
-						<string>errorMessageDisplayName</string>
-						<key>INIntentResponseParameterName</key>
-						<string>errorMessage</string>
-						<key>INIntentResponseParameterTag</key>
-						<integer>3</integer>
-						<key>INIntentResponseParameterType</key>
-						<string>String</string>
 					</dict>
 				</array>
 			</dict>
 			<key>INIntentTitle</key>
 			<string>Export PDF</string>
 			<key>INIntentTitleID</key>
-			<string>ExportPDFTitle</string>
+			<string>EPuQnpM0</string>
 			<key>INIntentType</key>
 			<string>Custom</string>
 			<key>INIntentVerb</key>

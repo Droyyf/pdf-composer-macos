@@ -3,6 +3,8 @@ import Intents
 import PDFKit
 import AppKit
 
+/*
+// Shortcuts integration temporarily disabled until IntentDefinition files are properly integrated
 @available(macOS 11.0, *)
 class ComposePDFIntentHandler: NSObject, ComposePDFIntentHandling {
     
@@ -263,3 +265,4 @@ class ComposePDFIntentHandler: NSObject, ComposePDFIntentHandling {
         completion(response)
     }
 }
+*/

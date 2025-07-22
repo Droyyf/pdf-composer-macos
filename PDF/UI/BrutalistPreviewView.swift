@@ -329,8 +329,8 @@ struct BrutalistPreviewView: View {
     @ObservedObject var viewModel: AppShellViewModel
     @Environment(\.presentationMode) var presentationMode
     @State private var showFileExporter = false
-    @State private var selectedMode: CompositionMode = .custom
-    @State private var selectedFormat: ExportFormat = .png
+    @State private var selectedMode: CompositionMode = .centerCitation
+    @State private var selectedFormat: ExportService.ExportFormat = .png
     @State private var showToast: Bool = false
     @State private var toastMessage: String = ""
     @State private var refreshID = UUID()
@@ -383,7 +383,7 @@ struct BrutalistPreviewView: View {
 
     // Current frame based on mode
     private var currentFrame: String {
-        selectedMode == .sideBySide ? selectedHorizontalFrame : selectedVerticalFrame
+        selectedMode == .centerCitation ? selectedHorizontalFrame : selectedVerticalFrame
     }
 
     var body: some View {
@@ -415,7 +415,7 @@ struct BrutalistPreviewView: View {
                             .brutalistTexture(style: .noise, intensity: 0.2, color: .white)
 
                         VStack(spacing: 8) {
-                            if selectedMode == .sideBySide {
+                            if selectedMode == .centerCitation {
                                 // Multiple citation pages: show all as a scrollable list of pairs
                                 ZoomableScrollView(zoomScale: $zoomScale, lastZoomValue: $lastZoomValue) {
                                     VStack(spacing: 24) {
@@ -823,7 +823,7 @@ struct BrutalistPreviewView: View {
                 Spacer()
 
                 // Show frame toggle and related controls
-                if selectedMode == .sideBySide {
+                if selectedMode == .centerCitation {
                     HStack(spacing: 12) {
                         // Frame toggle
                         Toggle(isOn: $showOrnateFrame) {
@@ -880,7 +880,7 @@ struct BrutalistPreviewView: View {
                                         ForEach(availableFrames.filter { selectedMode == .sideBySide ? $0.hasPrefix("frame") && ($0.hasSuffix("H") || $0.contains("H")) : $0.hasPrefix("frame") && ($0.hasSuffix("V") || $0.contains("V")) }, id: \.self) { frameName in
                                             Button {
                                                 // Select the frame
-                                                if selectedMode == .sideBySide {
+                                                if selectedMode == .centerCitation {
                                                     selectedHorizontalFrame = frameName
                                                 } else {
                                                     selectedVerticalFrame = frameName
@@ -1090,7 +1090,7 @@ struct BrutalistPreviewView: View {
         let baseName = doc.documentURL?.deletingPathExtension().lastPathComponent ?? "export"
 
         // Get the appropriate frame name based on composition mode
-        let frameToUse = selectedMode == .sideBySide ? selectedHorizontalFrame : selectedVerticalFrame
+        let frameToUse = selectedMode == .centerCitation ? selectedHorizontalFrame : selectedVerticalFrame
 
         // Process exports using structured concurrency with TaskGroup for better performance
         let exportTask = Task {
@@ -1132,7 +1132,7 @@ struct BrutalistPreviewView: View {
                                 
                                 // Use autoreleasepool for memory management during composition
                                 outputImage = try await autoreleasepool {
-                                    if selectedMode == .sideBySide {
+                                    if selectedMode == .centerCitation {
                                         return brutalistComposeSideBySide(citation: citationPage, cover: coverPage, applyFrame: showOrnateFrame, frameName: frameToUse, isPreview: false)
                                     } else {
                                         return brutalistComposeCustom(citation: citationPage, cover: coverPage, coverPosition: coverPosition, coverSize: coverSize, applyFrame: showOrnateFrame, frameName: frameToUse, isPreview: false)
@@ -1269,7 +1269,9 @@ struct BrutalistPreviewView: View {
             savePanel.nameFieldStringValue += ".png"
         case .pdf:
             savePanel.allowedContentTypes = [.pdf]
-            savePanel.nameFieldStringValue += ".pdf"
+        case .jpeg:
+            savePanel.allowedContentTypes = [.jpeg]
+            savePanel.nameFieldStringValue += ".jpeg"
         }
         
         savePanel.begin { response in
