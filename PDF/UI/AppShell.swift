@@ -2,8 +2,7 @@ import SwiftUI
 @preconcurrency import PDFKit
 import MetalKit
 
-// Import ExportFormat from ExportService
-typealias ExportFormat = ExportService.ExportFormat
+// ExportFormat is available globally from ExportService.swift
 
 // Add scene enum
 enum AppScene: Hashable {

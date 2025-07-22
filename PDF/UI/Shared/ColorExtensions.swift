@@ -26,6 +26,19 @@ extension Color {
             opacity: Double(a) / 255
         )
     }
+    
+    var hexString: String {
+        // Convert Color to hex string
+        // This is a simplified implementation for common colors
+        if self == .red { return "#FF0000" }
+        if self == .green { return "#00FF00" }
+        if self == .blue { return "#0000FF" }
+        if self == .white { return "#FFFFFF" }
+        if self == .black { return "#000000" }
+        if self == .gray { return "#808080" }
+        if self == Color(DesignTokens.brutalistPrimary) { return "#FF6B9D" }
+        return "#808080" // Default gray
+    }
 }
 
 // MARK: - View Extensions

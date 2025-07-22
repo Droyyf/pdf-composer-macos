@@ -176,10 +176,10 @@ struct CloudStorageAccountsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(
-            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2), style: .continuous)
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .fill(color.opacity(0.1))
                 .overlay(
-                    UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2), style: .continuous)
+                    UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                         .strokeBorder(color.opacity(0.3), lineWidth: 1)
                 )
         )
@@ -405,7 +405,7 @@ struct CloudStorageAccountsView: View {
         HStack(spacing: 16) {
             // Provider icon
             ZStack {
-                UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2), style: .continuous)
+                UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                     .fill(Color(DesignTokens.brutalistPrimary).opacity(0.1))
                     .frame(width: 40, height: 40)
                 

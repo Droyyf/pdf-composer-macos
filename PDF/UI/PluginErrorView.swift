@@ -52,11 +52,11 @@ struct PluginErrorView: View {
             }
         }
         .sheet(isPresented: $showingErrorHistory) {
-            PluginErrorHistoryView(errorHandler: errorHandler)
+            PluginErrorHistoryPlaceholder(errorHandler: errorHandler)
         }
         .sheet(isPresented: $errorHandler.showingErrorDetails) {
             if let error = errorHandler.selectedError {
-                PluginErrorDetailView(errorReport: error, errorHandler: errorHandler)
+                PluginErrorDetailPlaceholder(errorReport: error, errorHandler: errorHandler)
             }
         }
     }
@@ -534,6 +534,43 @@ struct PluginErrorRowView: View {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+// MARK: - Placeholder Components
+
+struct PluginErrorHistoryPlaceholder: View {
+    let errorHandler: PluginErrorHandler
+    
+    var body: some View {
+        VStack {
+            Text("ERROR HISTORY")
+                .font(.system(size: 16, weight: .bold, design: .monospaced))
+                .padding()
+            
+            Text("Error history view would be implemented here")
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundColor(.secondary)
+        }
+        .frame(minWidth: 400, minHeight: 300)
+    }
+}
+
+struct PluginErrorDetailPlaceholder: View {
+    let errorReport: PluginErrorHandler.ErrorReport
+    let errorHandler: PluginErrorHandler
+    
+    var body: some View {
+        VStack {
+            Text("ERROR DETAILS")
+                .font(.system(size: 16, weight: .bold, design: .monospaced))
+                .padding()
+            
+            Text("Error details view would be implemented here")
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundColor(.secondary)
+        }
+        .frame(minWidth: 400, minHeight: 300)
     }
 }
 

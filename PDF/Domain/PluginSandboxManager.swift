@@ -105,7 +105,7 @@ class PluginSandboxManager {
             // Add timeout task
             group.addTask {
                 try await Task.sleep(nanoseconds: UInt64(maxExecutionTime * 1_000_000_000))
-                throw PluginError.resourceLimitExceeded("Sandbox execution timed out after \(maxExecutionTime) seconds")
+                throw PluginError.resourceLimitExceeded("Sandbox execution timed out after \(self.maxExecutionTime) seconds")
             }
             
             // Add resource monitoring task
@@ -260,7 +260,7 @@ class SandboxResourceMonitor {
         isMonitoring = true
         startTime = Date()
         
-        logger.debug("Starting resource monitoring for sandbox: \(sandbox.identifier)")
+        logger.debug("Starting resource monitoring for sandbox: \(self.sandbox.identifier)")
         
         // Monitor resources periodically
         while isMonitoring {
@@ -274,7 +274,7 @@ class SandboxResourceMonitor {
     /// Stop monitoring
     func stopMonitoring() {
         isMonitoring = false
-        logger.debug("Stopped resource monitoring for sandbox: \(sandbox.identifier)")
+        logger.debug("Stopped resource monitoring for sandbox: \(self.sandbox.identifier)")
     }
     
     /// Validate current resource usage against limits

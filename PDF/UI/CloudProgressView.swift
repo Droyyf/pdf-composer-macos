@@ -309,10 +309,10 @@ struct CompactCloudProgressView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(
-            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2), style: .continuous)
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .fill(Color.black.opacity(0.6))
                 .overlay(
-                    UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2), style: .continuous)
+                    UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                         .strokeBorder(progressBorderColor, lineWidth: 1)
                 )
         )
