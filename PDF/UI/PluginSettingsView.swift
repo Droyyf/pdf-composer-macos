@@ -84,7 +84,7 @@ struct PluginSettingsView: View {
         .padding(.vertical, 16)
         .padding(.horizontal, 20)
         .background(
-            BrutalistCard()
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .fill(.ultraThinMaterial)
         )
     }
@@ -106,11 +106,11 @@ struct PluginSettingsView: View {
             .padding(.vertical, 20)
         }
         .background(
-            BrutalistCard()
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .fill(.regularMaterial)
         )
         .overlay(
-            BrutalistCard()
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .stroke(.tertiary, lineWidth: 2)
         )
     }
@@ -132,11 +132,11 @@ struct PluginSettingsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
-            BrutalistCard()
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .fill(.regularMaterial)
         )
         .overlay(
-            BrutalistCard()
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .stroke(.tertiary, lineWidth: 2)
         )
     }
@@ -304,7 +304,6 @@ struct PluginSettingsView: View {
             }
         ))
         .textFieldStyle(BrutalistTextFieldStyle())
-        .keyboardType(.URL)
     }
     
     private func colorSettingControl(_ setting: PluginSettingsSchema.PluginSetting) -> some View {
@@ -451,7 +450,7 @@ struct PluginSettingsView: View {
         .padding(.vertical, 16)
         .padding(.horizontal, 20)
         .background(
-            BrutalistCard()
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .fill(.ultraThinMaterial)
         )
     }
