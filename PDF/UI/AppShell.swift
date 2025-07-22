@@ -8,6 +8,7 @@ enum AppScene: Hashable {
     case main
     case preview
     case mainMenu
+    case batchProcessing
     // pageSelection removed - handled in BrutalistAppShell
 }
 
@@ -31,6 +32,10 @@ class AppShellViewModel: ObservableObject {
     
     // Centralized thumbnail service
     let thumbnailService = ThumbnailService()
+    
+    // PDF service for batch processing and other operations
+    let pdfService = PDFService()
+    
     private var loadingTask: Task<Void, Never>? = nil
 
     // Preview state
@@ -370,6 +375,11 @@ struct AppShell: View {
                             MainMenuView(viewModel: viewModel)
                                 .onAppear {
                                     print("DEBUG: Showing MainMenuView")
+                                }
+                        } else if viewModel.selectedAppScene == .batchProcessing {
+                            BatchProcessingView(pdfService: viewModel.pdfService)
+                                .onAppear {
+                                    print("DEBUG: Showing BatchProcessingView")
                                 }
                         // .pageSelection scene removed - page selection is handled in BrutalistAppShell
                         } else if viewModel.showPreview || viewModel.selectedAppScene == .preview {

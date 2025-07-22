@@ -288,17 +288,14 @@ struct MainMenuView: View {
     private func secondaryCard1(responsiveLayout: ResponsiveLayout, geo: GeometryProxy) -> some View {
         MenuCardView(
             imageName: "poster_image_panel_2",
-            title: "SELECT PAGES",
-            iconName: "square.grid.2x2",
+            title: "BATCH PROCESS",
+            iconName: "square.3.layers.3d",
             action: {
-                // Only perform action if PDF is loaded
-                guard viewModel.pdfDocument != nil else { return }
                 withAnimation(DesignTokens.cardTapAnimation) {
-                    viewModel.showPreview = false
-                    viewModel.selectedAppScene = .main
+                    viewModel.selectedAppScene = .batchProcessing
                 }
             },
-            enableHover: viewModel.pdfDocument != nil,
+            enableHover: true, // Always enabled since it doesn't require a loaded PDF
             height: max(geo.size.height * 0.22, 100),
             geo: geo
         )
@@ -308,13 +305,14 @@ struct MainMenuView: View {
     private func secondaryCard2(responsiveLayout: ResponsiveLayout, geo: GeometryProxy) -> some View {
         MenuCardView(
             imageName: "poster_image_panel_3",
-            title: "COMPOSITION PREVIEW",
-            iconName: "rectangle.stack",
+            title: "SELECT PAGES",
+            iconName: "square.grid.2x2",
             action: {
                 // Only perform action if PDF is loaded
                 guard viewModel.pdfDocument != nil else { return }
                 withAnimation(DesignTokens.cardTapAnimation) {
-                    viewModel.showPreview = true
+                    viewModel.showPreview = false
+                    viewModel.selectedAppScene = .main
                 }
             },
             enableHover: viewModel.pdfDocument != nil,
