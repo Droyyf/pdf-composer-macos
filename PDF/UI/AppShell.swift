@@ -12,6 +12,7 @@ enum AppScene: Hashable {
     case mainMenu
     case batchProcessing
     case pluginManager
+    case cloudStorage
     // pageSelection removed - handled in BrutalistAppShell
 }
 
@@ -44,6 +45,11 @@ class AppShellViewModel: ObservableObject {
     let pluginManager = PluginManager()
     let pluginErrorHandler: PluginErrorHandler
     let pluginMenuIntegration: PluginMenuIntegration
+    
+    // Cloud storage integration
+    @Published var showingCloudStorage = false
+    @Published var showingCloudAuth = false
+    @Published var showingCloudExport = false
     
     private var loadingTask: Task<Void, Never>? = nil
 
@@ -107,6 +113,37 @@ class AppShellViewModel: ObservableObject {
         ) { [weak self] _ in
             Task {
                 await self?.pluginManager.scanForPlugins()
+            }
+        }
+        
+        // Cloud storage notification observers
+        NotificationCenter.default.addObserver(
+            forName: .showCloudStorage,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.selectedAppScene = .cloudStorage
+            }
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: .showCloudAuth,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.showingCloudAuth = true
+            }
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: .exportToCloud,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.showingCloudExport = true
             }
         }
         
@@ -451,6 +488,11 @@ struct AppShell: View {
                                 .onAppear {
                                     print("DEBUG: Showing PluginManagerView")
                                 }
+                        } else if viewModel.selectedAppScene == .cloudStorage {
+                            CloudStorageAccountsView()
+                                .onAppear {
+                                    print("DEBUG: Showing CloudStorageAccountsView")
+                                }
                         // .pageSelection scene removed - page selection is handled in BrutalistAppShell
                         } else if viewModel.showPreview || viewModel.selectedAppScene == .preview {
                             // Prioritize showing preview when either property is set
@@ -502,6 +544,27 @@ struct AppShell: View {
         }
         .sheet(isPresented: $viewModel.showingPluginErrors) {
             PluginErrorView()
+        }
+        
+        // Cloud storage UI integration
+        .sheet(isPresented: $viewModel.showingCloudAuth) {
+            CloudStorageAuthView()
+        }
+        .sheet(isPresented: $viewModel.showingCloudExport) {
+            if let pdfDocument = viewModel.pdfDocument {
+                // We'll create a temporary URL for the cloud export
+                // In a real implementation, you'd want to handle this more elegantly
+                CloudStoragePickerView(
+                    localFileURL: URL(fileURLWithPath: "/tmp/temp_export.pdf"),
+                    onComplete: { account, remotePath in
+                        viewModel.showingCloudExport = false
+                        // Handle successful cloud export
+                    },
+                    onCancel: {
+                        viewModel.showingCloudExport = false
+                    }
+                )
+            }
         }
     }
     

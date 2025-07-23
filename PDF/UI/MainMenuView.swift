@@ -172,9 +172,9 @@ struct MainMenuView: View {
                 .frame(width: geo.size.width, height: geo.size.height * 0.6)
                 .offset(y: -20)
 
-            // Fixed layout configuration - always 1 card top, 2 cards side by side bottom
+            // Fixed layout configuration - 1 card top, 3 cards in bottom row
             VStack(spacing: max(geo.size.height * 0.02, 12)) {
-                // Main card - Open PDF (always on top, takes 50% of cards area)
+                // Main card - Open PDF (always on top, takes 40% of cards area)
                 MenuCardView(
                     imageName: "poster_image_panel_1",
                     title: "OPEN PDF",
@@ -184,17 +184,20 @@ struct MainMenuView: View {
                             showFileImporter = true
                         }
                     },
-                    height: max(geo.size.height * 0.25, 120),
+                    height: max(geo.size.height * 0.2, 100),
                     geo: geo
                 )
                 .frame(maxWidth: .infinity)
 
-                // Two smaller cards - always side by side (each takes 25% of cards area)
-                HStack(spacing: max(geo.size.width * 0.02, 12)) {
+                // Three smaller cards - always side by side (each takes ~20% of cards area)
+                HStack(spacing: max(geo.size.width * 0.015, 8)) {
                     secondaryCard1(responsiveLayout: responsiveLayout, geo: geo)
                         .frame(maxWidth: .infinity)
                     
                     secondaryCard2(responsiveLayout: responsiveLayout, geo: geo)
+                        .frame(maxWidth: .infinity)
+                    
+                    cloudStorageCard(responsiveLayout: responsiveLayout, geo: geo)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -296,7 +299,7 @@ struct MainMenuView: View {
                 }
             },
             enableHover: true, // Always enabled since it doesn't require a loaded PDF
-            height: max(geo.size.height * 0.22, 100),
+            height: max(geo.size.height * 0.18, 80),
             geo: geo
         )
     }
@@ -316,7 +319,24 @@ struct MainMenuView: View {
                 }
             },
             enableHover: viewModel.pdfDocument != nil,
-            height: max(geo.size.height * 0.22, 100),
+            height: max(geo.size.height * 0.18, 80),
+            geo: geo
+        )
+    }
+    
+    @ViewBuilder
+    private func cloudStorageCard(responsiveLayout: ResponsiveLayout, geo: GeometryProxy) -> some View {
+        MenuCardView(
+            imageName: "poster_image_panel_1", // Use different texture
+            title: "CLOUD STORAGE",
+            iconName: "icloud",
+            action: {
+                withAnimation(DesignTokens.cardTapAnimation) {
+                    viewModel.selectedAppScene = .cloudStorage
+                }
+            },
+            enableHover: true, // Always enabled
+            height: max(geo.size.height * 0.18, 80),
             geo: geo
         )
     }
