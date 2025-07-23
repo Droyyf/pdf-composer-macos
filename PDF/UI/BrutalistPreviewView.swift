@@ -1088,8 +1088,8 @@ struct BrutalistPreviewView: View {
     @ViewBuilder
     private var customOverlayButton: some View {
         Button {
-            selectedMode = .custom
-            viewModel.compositionMode = .custom
+            selectedMode = .fullPage
+            viewModel.compositionMode = .fullPage
             refreshID = UUID() // Force refresh
         } label: {
             HStack {
@@ -1103,13 +1103,13 @@ struct BrutalistPreviewView: View {
             .padding(.vertical, 8)
             .background(
                 UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
-                    .fill(selectedMode == .custom ? Color(DesignTokens.brutalistPrimary).opacity(0.3) : Color.black.opacity(0.2))
+                    .fill(selectedMode == .fullPage ? Color(DesignTokens.brutalistPrimary).opacity(0.3) : Color.black.opacity(0.2))
                     .overlay(
                         UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
-                            .strokeBorder(selectedMode == .custom ? Color(DesignTokens.brutalistPrimary) : Color.white.opacity(0.2), lineWidth: 1)
+                            .strokeBorder(selectedMode == .fullPage ? Color(DesignTokens.brutalistPrimary) : Color.white.opacity(0.2), lineWidth: 1)
                     )
             )
-            .foregroundColor(selectedMode == .custom ? Color(DesignTokens.brutalistPrimary) : .white.opacity(0.6))
+            .foregroundColor(selectedMode == .fullPage ? Color(DesignTokens.brutalistPrimary) : .white.opacity(0.6))
         }
         .buttonStyle(PlainButtonStyle())
     }

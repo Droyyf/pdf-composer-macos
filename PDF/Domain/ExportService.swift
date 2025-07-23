@@ -303,7 +303,7 @@ final class ExportService: ObservableObject {
         
         let composedPDF = try await Composer.merge(
             pages: citationPages,
-            cover: coverPage.flatMap { $0.first?.thumbnail(of: CGSize(width: 612, height: 792), for: PDFDisplayBox.mediaBox) },
+            cover: coverPage?.thumbnail(of: CGSize(width: 612, height: 792), for: PDFDisplayBox.mediaBox),
             coverPlacement: .top,
             mode: .export
         )
@@ -331,7 +331,7 @@ final class ExportService: ObservableObject {
         // First compose to PDF
         let composedPDF = try await Composer.merge(
             pages: citationPages,
-            cover: coverPage.flatMap { $0.first?.thumbnail(of: CGSize(width: 612, height: 792), for: PDFDisplayBox.mediaBox) },
+            cover: coverPage?.thumbnail(of: CGSize(width: 612, height: 792), for: PDFDisplayBox.mediaBox),
             coverPlacement: .top,
             mode: .export
         )
