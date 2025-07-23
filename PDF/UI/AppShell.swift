@@ -13,6 +13,7 @@ enum AppScene: Hashable {
     case batchProcessing
     case pluginManager
     case cloudStorage
+    case options
     // pageSelection removed - handled in BrutalistAppShell
 }
 
@@ -492,6 +493,11 @@ struct AppShell: View {
                             CloudStorageAccountsView()
                                 .onAppear {
                                     print("DEBUG: Showing CloudStorageAccountsView")
+                                }
+                        } else if viewModel.selectedAppScene == .options {
+                            OptionsMenuView()
+                                .onAppear {
+                                    print("DEBUG: Showing OptionsMenuView")
                                 }
                         // .pageSelection scene removed - page selection is handled in BrutalistAppShell
                         } else if viewModel.showPreview || viewModel.selectedAppScene == .preview {

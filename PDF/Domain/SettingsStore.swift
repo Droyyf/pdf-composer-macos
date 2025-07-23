@@ -15,6 +15,39 @@ struct Settings: Codable {
     var autoUploadEnabled: Bool = false
     var cloudBackupEnabled: Bool = false
     var syncSettings: Bool = false
+    
+    // Plugin settings
+    var autoUpdatePlugins: Bool = true
+    var enabledPlugins: [String] = []
+    
+    // Export settings
+    var defaultExportFormat: String = "PDF"
+    var exportImageQuality: Double = 0.8
+    var optimizeForWeb: Bool = false
+    
+    // Performance settings
+    var thumbnailCacheSize: Int = 100
+    var thumbnailQuality: Double = 0.8
+    var backgroundProcessing: Bool = true
+    var maxConcurrentThumbnails: Int = 4
+    
+    // Interface settings
+    var animationsEnabled: Bool = true
+    var noiseIntensity: Double = 0.4
+    var showTooltips: Bool = true
+    var compactMode: Bool = false
+    
+    // Debug settings
+    var debugLogging: Bool = false
+    var showPerformanceMetrics: Bool = false
+    var enableCrashReporting: Bool = true
+    var logRetentionDays: Int = 7
+    
+    // Advanced settings
+    var metalRenderingEnabled: Bool = true
+    var highQualityRendering: Bool = true
+    var memoryOptimizationLevel: Int = 1 // 0=Off, 1=Normal, 2=Aggressive
+    var preloadThumbnailCount: Int = 20
 }
 
 final class SettingsStore: ObservableObject {

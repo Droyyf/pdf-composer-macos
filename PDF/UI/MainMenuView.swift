@@ -125,6 +125,61 @@ struct MainMenuView: View {
                     .padding(.bottom, layout.verticalPadding)
                     .accessibilityHidden(true) // Decorative elements
             }
+            
+            // Options button positioned in top-right
+            VStack {
+                HStack {
+                    Spacer()
+                    
+                    Button(action: {
+                        withAnimation(DesignTokens.cardTapAnimation) {
+                            viewModel.selectedAppScene = .options
+                        }
+                    }) {
+                        ZStack {
+                            // Brutalist background shape
+                            UnevenRoundedRectangle(
+                                cornerRadii: [
+                                    .topLeading: 0,
+                                    .bottomLeading: 12,
+                                    .bottomTrailing: 0,
+                                    .topTrailing: 0
+                                ],
+                                style: .continuous
+                            )
+                            .fill(DesignTokens.brutalistBlack.opacity(0.15))
+                            .frame(width: 44, height: 44)
+                            .overlay(
+                                UnevenRoundedRectangle(
+                                    cornerRadii: [
+                                        .topLeading: 0,
+                                        .bottomLeading: 12,
+                                        .bottomTrailing: 0,
+                                        .topTrailing: 0
+                                    ],
+                                    style: .continuous
+                                )
+                                .strokeBorder(DesignTokens.brutalistBlack.opacity(0.3), lineWidth: 2)
+                            )
+                            
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(DesignTokens.brutalistBlack.opacity(0.8))
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .scaleEffect(1.0)
+                    .onHover { hovering in
+                        // Add subtle hover effect
+                    }
+                    .accessibilityLabel("Open Options")
+                    .accessibilityHint("Opens the options and settings menu")
+                }
+                .padding(.horizontal, layout.horizontalPadding)
+                .padding(.top, 8)
+                
+                Spacer()
+            }
         }
     }
     
@@ -172,9 +227,9 @@ struct MainMenuView: View {
                 .frame(width: geo.size.width, height: geo.size.height * 0.6)
                 .offset(y: -20)
 
-            // Fixed layout configuration - 1 card top, 3 cards in bottom row
+            // Fixed layout configuration - 1 card top, 2 cards in bottom row
             VStack(spacing: max(geo.size.height * 0.02, 12)) {
-                // Main card - Open PDF (always on top, takes 40% of cards area)
+                // Main card - Open PDF (always on top, takes more height)
                 MenuCardView(
                     imageName: "poster_image_panel_1",
                     title: "OPEN PDF",
@@ -184,20 +239,17 @@ struct MainMenuView: View {
                             showFileImporter = true
                         }
                     },
-                    height: max(geo.size.height * 0.2, 100),
+                    height: max(geo.size.height * 0.24, 120),
                     geo: geo
                 )
                 .frame(maxWidth: .infinity)
 
-                // Three smaller cards - always side by side (each takes ~20% of cards area)
-                HStack(spacing: max(geo.size.width * 0.015, 8)) {
+                // Two smaller cards side by side
+                HStack(spacing: max(geo.size.width * 0.02, 12)) {
                     secondaryCard1(responsiveLayout: responsiveLayout, geo: geo)
                         .frame(maxWidth: .infinity)
                     
                     secondaryCard2(responsiveLayout: responsiveLayout, geo: geo)
-                        .frame(maxWidth: .infinity)
-                    
-                    cloudStorageCard(responsiveLayout: responsiveLayout, geo: geo)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -299,7 +351,7 @@ struct MainMenuView: View {
                 }
             },
             enableHover: true, // Always enabled since it doesn't require a loaded PDF
-            height: max(geo.size.height * 0.18, 80),
+            height: max(geo.size.height * 0.2, 100),
             geo: geo
         )
     }
@@ -319,27 +371,11 @@ struct MainMenuView: View {
                 }
             },
             enableHover: viewModel.pdfDocument != nil,
-            height: max(geo.size.height * 0.18, 80),
+            height: max(geo.size.height * 0.2, 100),
             geo: geo
         )
     }
     
-    @ViewBuilder
-    private func cloudStorageCard(responsiveLayout: ResponsiveLayout, geo: GeometryProxy) -> some View {
-        MenuCardView(
-            imageName: "poster_image_panel_1", // Use different texture
-            title: "CLOUD STORAGE",
-            iconName: "icloud",
-            action: {
-                withAnimation(DesignTokens.cardTapAnimation) {
-                    viewModel.selectedAppScene = .cloudStorage
-                }
-            },
-            enableHover: true, // Always enabled
-            height: max(geo.size.height * 0.18, 80),
-            geo: geo
-        )
-    }
 }
 
 // MARK: - Debug Utilities
