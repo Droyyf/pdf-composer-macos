@@ -107,9 +107,7 @@ struct PluginManagerView: View {
         .padding(.vertical, 16)
         .padding(.horizontal, 20)
         .background(
-            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(
-                topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2
-            ))
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .fill(.ultraThinMaterial)
         )
     }
@@ -165,15 +163,11 @@ struct PluginManagerView: View {
             }
         }
         .background(
-            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(
-                topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2
-            ))
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .fill(.regularMaterial)
         )
         .overlay(
-            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(
-                topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2
-            ))
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .stroke(.tertiary, lineWidth: 2)
         )
     }
@@ -219,15 +213,11 @@ struct PluginManagerView: View {
             }
         }
         .background(
-            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(
-                topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2
-            ))
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .fill(.regularMaterial)
         )
         .overlay(
-            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(
-                topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2
-            ))
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                 .stroke(.tertiary, lineWidth: 2)
         )
     }
