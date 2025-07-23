@@ -135,7 +135,7 @@ struct PluginManagerView: View {
                     .fill(.quaternary)
                     .overlay(
                         Rectangle()
-                            .stroke(.tertiary, lineWidth: 1)
+                            .stroke(.secondary, lineWidth: 1)
                             .offset(y: 1)
                     )
             )
@@ -168,7 +168,7 @@ struct PluginManagerView: View {
         )
         .overlay(
             UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
-                .stroke(.tertiary, lineWidth: 2)
+                .stroke(.secondary, lineWidth: 2)
         )
     }
     
@@ -218,7 +218,7 @@ struct PluginManagerView: View {
         )
         .overlay(
             UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
-                .stroke(.tertiary, lineWidth: 2)
+                .stroke(.secondary, lineWidth: 2)
         )
     }
     
@@ -265,7 +265,7 @@ struct PluginManagerView: View {
                     .fill(.quaternary)
                     .overlay(
                         Rectangle()
-                            .stroke(.tertiary, lineWidth: 1)
+                            .stroke(.secondary, lineWidth: 1)
                             .offset(y: 1)
                     )
             )
@@ -328,14 +328,14 @@ struct PluginManagerView: View {
         VStack(spacing: 16) {
             Image(systemName: "puzzlepiece.extension.fill")
                 .font(.system(size: 48, weight: .bold, design: .monospaced))
-                .foregroundColor(.tertiary)
+                .foregroundColor(.secondary)
             
             VStack(spacing: 8) {
                 BrutalistText("SELECT A PLUGIN", style: .headline)
                     .foregroundColor(.secondary)
                 
                 BrutalistText("CHOOSE A PLUGIN FROM THE LIST TO VIEW DETAILS", style: .caption)
-                    .foregroundColor(.tertiary)
+                    .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
             }
         }
