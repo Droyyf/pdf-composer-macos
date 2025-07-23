@@ -495,7 +495,9 @@ struct AppShell: View {
                                     print("DEBUG: Showing CloudStorageAccountsView")
                                 }
                         } else if viewModel.selectedAppScene == .options {
-                            OptionsMenuView()
+                            OptionsMenuView(onDismiss: {
+                                viewModel.selectedAppScene = .mainMenu
+                            })
                                 .onAppear {
                                     print("DEBUG: Showing OptionsMenuView")
                                 }

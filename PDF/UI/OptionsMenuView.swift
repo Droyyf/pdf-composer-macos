@@ -34,6 +34,9 @@ struct OptionsMenuView: View {
     @State private var showingPluginManager = false
     @State private var showingAbout = false
     
+    // Closure to handle dismissal when not presented as a modal
+    var onDismiss: (() -> Void)? = nil
+    
     // Local state for immediate UI updates
     @State private var selectedCloudProvider = "None"
     @State private var cacheSize: Double = 100.0
@@ -123,7 +126,13 @@ struct OptionsMenuView: View {
                 Spacer()
                 
                 // Close button
-                Button(action: { dismiss() }) {
+                Button(action: { 
+                    if let onDismiss = onDismiss {
+                        onDismiss()
+                    } else {
+                        dismiss()
+                    }
+                }) {
                     ZStack {
                         Circle()
                             .fill(DesignTokens.brutalistBlack.opacity(0.1))
@@ -691,7 +700,7 @@ struct AboutView: View {
 }
 
 #Preview {
-    OptionsMenuView()
+    OptionsMenuView(onDismiss: nil)
         .frame(width: 800, height: 800)
         .preferredColorScheme(.dark)
 }
