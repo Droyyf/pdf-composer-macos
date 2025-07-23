@@ -57,7 +57,7 @@ final class PluginManager: ObservableObject {
         // Set up message handlers
         setupMessageHandlers()
         
-        logger.info("PluginManager initialized with search paths: \(pluginSearchPaths)")
+        logger.info("PluginManager initialized with search paths: \(self.pluginSearchPaths)")
     }
     
     // MARK: - Plugin Discovery
@@ -179,12 +179,14 @@ final class PluginManager: ObservableObject {
             try bundle.loadAndReturnError()
             
             guard let principalClassName = bundle.infoDictionary?["NSPrincipalClass"] as? String,
-                  let principalClass = bundle.classNamed(principalClassName) as? PDFPlugin.Type else {
-                throw PluginError.executionError("Principal class not found or doesn't conform to PDFPlugin")
+                  let principalClass = bundle.classNamed(principalClassName) as? NSObject.Type else {
+                throw PluginError.executionError("Principal class not found")
             }
             
             // Instantiate the plugin
-            let plugin = principalClass.init()
+            guard let plugin = principalClass.init() as? PDFPlugin else {
+                throw PluginError.executionError("Principal class doesn't conform to PDFPlugin")
+            }
             
             // Create plugin context
             let context = PluginContext(
@@ -278,7 +280,13 @@ final class PluginManager: ObservableObject {
             let request = PluginRequest(
                 id: UUID(),
                 action: action,
-                parameters: parameters.mapValues { AnyCodable($0) },
+                parameters: parameters.compactMapValues { value in
+                    // Only wrap values that are already Codable
+                    if let codableValue = value as? any Codable {
+                        return AnyCodable(codableValue)
+                    }
+                    return nil
+                },
                 timestamp: Date()
             )
             
@@ -374,8 +382,8 @@ final class PluginManager: ObservableObject {
                 requestId: UUID(),
                 success: true,
                 result: [
-                    "version": AnyCodable(self.hostVersion.description),
-                    "build": AnyCodable(Bundle.main.infoDictionary?["CFBundleVersion"] ?? "unknown")
+                    "version": AnyCodable(self.hostVersion.description as String),
+                    "build": AnyCodable((Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "unknown")
                 ],
                 error: nil,
                 timestamp: Date()
@@ -437,19 +445,19 @@ private class PluginLoggerImpl: PluginLogger {
     }
     
     func debug(_ message: String, file: String = #file, line: Int = #line) {
-        logger.debug("[\(pluginId)] \(message) (\(URL(fileURLWithPath: file).lastPathComponent):\(line))")
+        logger.debug("[\(self.pluginId)] \(message) (\(URL(fileURLWithPath: file).lastPathComponent):\(line))")
     }
     
     func info(_ message: String, file: String = #file, line: Int = #line) {
-        logger.info("[\(pluginId)] \(message) (\(URL(fileURLWithPath: file).lastPathComponent):\(line))")
+        logger.info("[\(self.pluginId)] \(message) (\(URL(fileURLWithPath: file).lastPathComponent):\(line))")
     }
     
     func warning(_ message: String, file: String = #file, line: Int = #line) {
-        logger.warning("[\(pluginId)] \(message) (\(URL(fileURLWithPath: file).lastPathComponent):\(line))")
+        logger.warning("[\(self.pluginId)] \(message) (\(URL(fileURLWithPath: file).lastPathComponent):\(line))")
     }
     
     func error(_ message: String, file: String = #file, line: Int = #line) {
-        logger.error("[\(pluginId)] \(message) (\(URL(fileURLWithPath: file).lastPathComponent):\(line))")
+        logger.error("[\(self.pluginId)] \(message) (\(URL(fileURLWithPath: file).lastPathComponent):\(line))")
     }
 }
 

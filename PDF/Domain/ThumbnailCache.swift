@@ -47,8 +47,10 @@ actor ThumbnailCache: ObservableObject {
     
     // MARK: - Initialization
     init() {
-        setupCache()
-        setupMemoryPressureHandling()
+        Task {
+            await setupCache()
+            await setupMemoryPressureHandling()
+        }
     }
     
     deinit {
@@ -57,7 +59,7 @@ actor ThumbnailCache: ObservableObject {
     }
     
     // MARK: - Cache Setup
-    private func setupCache() {
+    private func setupCache() async {
         cache.countLimit = CacheConfig.defaultCapacity
         cache.totalCostLimit = CacheConfig.defaultCapacity * 160 * 200 * 4 // Rough memory estimate
         
@@ -69,7 +71,7 @@ actor ThumbnailCache: ObservableObject {
     }
     
     // MARK: - Memory Pressure Handling
-    private func setupMemoryPressureHandling() {
+    private func setupMemoryPressureHandling() async {
         memoryPressureSource = DispatchSource.makeMemoryPressureSource(
             eventMask: [.warning, .critical],
             queue: DispatchQueue.global(qos: .utility)

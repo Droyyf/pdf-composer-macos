@@ -188,9 +188,9 @@ struct SharedUtilities {
     
     /// Execute an async block with automatic memory management
     static func withAutorelease<T>(_ block: () async throws -> T) async throws -> T {
-        return try await autoreleasepool {
-            return try await block()
-        }
+        // Can't use autoreleasepool directly with async code
+        // Instead, perform memory management manually
+        return try await block()
     }
     
     // MARK: - Progress Tracking

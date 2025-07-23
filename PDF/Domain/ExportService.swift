@@ -301,10 +301,11 @@ final class ExportService: ObservableObject {
         
         progressHandler(0.1, "Preparing PDF composition...")
         
-        let composedPDF = try await composer.composePages(
-            citationPages: citationPages.map { ($0, 0) }, // Simplified - use actual page indices if needed
-            coverPage: coverPage.map { ($0, 0) },
-            mode: composition
+        let composedPDF = try await Composer.merge(
+            pages: citationPages,
+            cover: coverPage.flatMap { $0.first?.thumbnail(of: CGSize(width: 612, height: 792), for: PDFDisplayBox.mediaBox) },
+            coverPlacement: .top,
+            mode: .export
         )
         
         progressHandler(0.8, "Saving PDF...")
@@ -328,10 +329,11 @@ final class ExportService: ObservableObject {
         let composer = Composer()
         
         // First compose to PDF
-        let composedPDF = try await composer.composePages(
-            citationPages: citationPages.map { ($0, 0) },
-            coverPage: coverPage.map { ($0, 0) },
-            mode: composition
+        let composedPDF = try await Composer.merge(
+            pages: citationPages,
+            cover: coverPage.flatMap { $0.first?.thumbnail(of: CGSize(width: 612, height: 792), for: PDFDisplayBox.mediaBox) },
+            coverPlacement: .top,
+            mode: .export
         )
         
         progressHandler(0.5, "Converting to \(format.displayName)...")
@@ -342,8 +344,8 @@ final class ExportService: ObservableObject {
         for pageIndex in 0..<composedPDF.pageCount {
             guard let page = composedPDF.page(at: pageIndex) else { continue }
             
-            let pageRect = page.bounds(for: .mediaBox)
-            let image = page.thumbnail(of: pageRect.size, for: .mediaBox)
+            let pageRect = page.bounds(for: PDFDisplayBox.mediaBox)
+            let image = page.thumbnail(of: pageRect.size, for: PDFDisplayBox.mediaBox)
             images.append(image)
             
             let progress = 0.5 + (Double(pageIndex + 1) / Double(composedPDF.pageCount)) * 0.3

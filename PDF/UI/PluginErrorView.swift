@@ -183,7 +183,7 @@ struct PluginErrorView: View {
                 .fill(selectedFilter == filter ? .blue.opacity(0.1) : .clear)
                 .overlay(
                     Rectangle()
-                        .stroke(selectedFilter == filter ? .blue : .tertiary, lineWidth: 1)
+                        .stroke(selectedFilter == filter ? .blue : Color.secondary, lineWidth: 1)
                 )
         )
     }
@@ -557,7 +557,7 @@ struct PluginErrorHistoryPlaceholder: View {
 }
 
 struct PluginErrorDetailPlaceholder: View {
-    let errorReport: PluginErrorHandler.ErrorReport
+    let errorReport: PluginErrorReport
     let errorHandler: PluginErrorHandler
     
     var body: some View {

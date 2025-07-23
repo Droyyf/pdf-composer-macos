@@ -61,7 +61,8 @@ class PluginMenuIntegration: ObservableObject {
         pluginsMenu.addItem(.separator())
         
         // Add plugins menu to main menu (before Window menu)
-        if let windowMenuIndex = mainMenu.indexOfItem(withTitle: "Window") {
+        let windowMenuIndex = mainMenu.indexOfItem(withTitle: "Window")
+        if windowMenuIndex != -1 {
             mainMenu.insertItem(pluginsMenuItem, at: windowMenuIndex)
         } else {
             mainMenu.addItem(pluginsMenuItem)

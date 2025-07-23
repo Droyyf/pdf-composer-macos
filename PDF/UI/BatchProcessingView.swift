@@ -66,7 +66,7 @@ class BatchProcessingViewModel: ObservableObject {
         
         processingTask = Task { [weak self] in
             do {
-                let stream = batchProcessor.processBatch(
+                let stream = await batchProcessor.processBatch(
                     inputURLs: selectedFiles,
                     outputDirectory: outputDirectory,
                     options: processingOptions

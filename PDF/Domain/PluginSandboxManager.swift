@@ -104,7 +104,7 @@ class PluginSandboxManager {
             
             // Add timeout task
             group.addTask {
-                try await Task.sleep(nanoseconds: UInt64(maxExecutionTime * 1_000_000_000))
+                try await Task.sleep(nanoseconds: UInt64(self.maxExecutionTime * 1_000_000_000))
                 throw PluginError.resourceLimitExceeded("Sandbox execution timed out after \(self.maxExecutionTime) seconds")
             }
             

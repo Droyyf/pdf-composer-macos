@@ -94,14 +94,16 @@ struct PluginDetailView: View {
             .fill(.quaternary)
             .frame(width: 64, height: 64)
             .overlay(
-                if let iconName = plugin.iconName {
-                    Image(iconName)
-                        .resizable()
-                        .scaledToFit()
-                } else {
-                    Image(systemName: "puzzlepiece.extension.fill")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.secondary)
+                Group {
+                    if let iconName = plugin.iconName {
+                        Image(iconName)
+                            .resizable()
+                            .scaledToFit()
+                    } else {
+                        Image(systemName: "puzzlepiece.extension.fill")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.secondary)
+                    }
                 }
             )
             .overlay(

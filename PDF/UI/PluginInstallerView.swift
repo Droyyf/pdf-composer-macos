@@ -510,24 +510,7 @@ struct BrutalistProgressViewStyle: ProgressViewStyle {
     }
 }
 
-// MARK: - Custom Text Field Style
-
-struct BrutalistTextFieldStyle: TextFieldStyle {
-    func _body(configuration: TextField<Self._Label>) -> some View {
-        configuration
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                Rectangle()
-                    .fill(.quaternary)
-                    .overlay(
-                        Rectangle()
-                            .stroke(.tertiary, lineWidth: 2)
-                    )
-            )
-            .font(.system(size: 14, weight: .medium, design: .monospaced))
-    }
-}
+// BrutalistTextFieldStyle is defined in BrutalistTextFieldStyle.swift
 
 #Preview {
     PluginInstallerView(pluginManager: PluginManager())

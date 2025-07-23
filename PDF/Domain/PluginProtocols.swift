@@ -6,7 +6,7 @@ import SwiftUI
 // MARK: - Plugin Metadata
 
 /// Semantic version structure for plugin compatibility
-struct PluginVersion: Codable, Comparable, CustomStringConvertible {
+struct PluginVersion: Codable, Comparable, CustomStringConvertible, Hashable {
     let major: Int
     let minor: Int
     let patch: Int
@@ -42,7 +42,7 @@ struct PluginVersion: Codable, Comparable, CustomStringConvertible {
 }
 
 /// Version requirement for host app compatibility
-struct PluginVersionRequirement: Codable {
+struct PluginVersionRequirement: Codable, Hashable {
     let minimum: PluginVersion
     let maximum: PluginVersion?
     
@@ -53,7 +53,7 @@ struct PluginVersionRequirement: Codable {
 }
 
 /// Plugin capability flags
-struct PluginCapabilities: Codable, OptionSet {
+struct PluginCapabilities: Codable, OptionSet, Hashable {
     let rawValue: UInt32
     
     static let pdfProcessing = PluginCapabilities(rawValue: 1 << 0)
@@ -311,7 +311,7 @@ struct AnyCodable: Codable {
 // MARK: - Core Plugin Protocols
 
 /// Base protocol that all plugins must conform to
-@objc protocol PDFPlugin: AnyObject {
+protocol PDFPlugin: AnyObject {
     /// Plugin metadata
     var metadata: PluginMetadata { get }
     
@@ -332,7 +332,7 @@ struct AnyCodable: Codable {
 }
 
 /// Protocol for PDF processing plugins
-@objc protocol PDFProcessingPlugin: PDFPlugin {
+protocol PDFProcessingPlugin: PDFPlugin {
     /// Process PDF document with given parameters
     func processPDF(_ document: PDFDocument, parameters: [String: Any]) async throws -> PDFDocument
     
@@ -344,7 +344,7 @@ struct AnyCodable: Codable {
 }
 
 /// Protocol for export format plugins
-@objc protocol ExportFormatPlugin: PDFPlugin {
+protocol ExportFormatPlugin: PDFPlugin {
     /// Export PDF to custom format
     func exportPDF(_ document: PDFDocument, to url: URL, options: ExportOptions) async throws
     

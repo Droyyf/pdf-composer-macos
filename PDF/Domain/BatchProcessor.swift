@@ -5,7 +5,7 @@ import Darwin
 
 // MARK: - Batch Processing Models
 struct BatchJob: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     let inputURL: URL
     let outputURL: URL
     let processingOptions: BatchProcessingOptions
@@ -19,6 +19,13 @@ struct BatchJob: Identifiable, Codable {
     var duration: TimeInterval? {
         guard let start = startTime, let end = endTime else { return nil }
         return end.timeIntervalSince(start)
+    }
+    
+    init(inputURL: URL, outputURL: URL, processingOptions: BatchProcessingOptions) {
+        self.id = UUID()
+        self.inputURL = inputURL
+        self.outputURL = outputURL
+        self.processingOptions = processingOptions
     }
 }
 
@@ -126,13 +133,8 @@ actor BatchProcessor {
         return AsyncThrowingStream { continuation in
             let sessionId = UUID()
             
-            Task { [weak self] in
+            Task {
                 do {
-                    guard let self = self else {
-                        continuation.finish(throwing: BatchProcessingError.operationCancelled)
-                        return
-                    }
-                    
                     // Validate batch
                     try await self.validateBatch(inputURLs: inputURLs, outputDirectory: outputDirectory, options: options)
                     
@@ -145,7 +147,7 @@ actor BatchProcessor {
                         continuation: continuation
                     )
                     
-                    self.activeBatches[sessionId] = session
+                    await self.addActiveSession(sessionId: sessionId, session: session)
                     
                     // Process batch
                     await self.processSession(session)
@@ -166,6 +168,10 @@ actor BatchProcessor {
     
     func getActiveSessionIds() async -> [UUID] {
         return Array(activeBatches.keys)
+    }
+    
+    private func addActiveSession(sessionId: UUID, session: BatchProcessingSession) {
+        activeBatches[sessionId] = session
     }
     
     // MARK: - Batch Validation
@@ -309,7 +315,7 @@ actor BatchProcessor {
                 failedJobs: failedJobs.count,
                 cancelledJobs: jobs.filter { $0.status == .cancelled }.count,
                 totalProcessingTime: endTime.timeIntervalSince(startTime),
-                totalInputSize: try? estimateInputSize(urls: session.inputURLs) ?? 0,
+                totalInputSize: (try? estimateInputSize(urls: session.inputURLs)) ?? 0,
                 totalOutputSize: calculateOutputSize(jobs: completedJobs),
                 jobs: completedJobs + failedJobs
             )

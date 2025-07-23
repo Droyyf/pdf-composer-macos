@@ -180,26 +180,7 @@ struct ViewExtractor<Content: View>: View {
     }
 }
 
-// Technical text style
-struct BrutalistText: View {
-    var text: String
-    var size: CGFloat = DesignTokens.fontSizeMD
-    var color: Color = Color(DesignTokens.brutalistPrimary)
-    var alignment: TextAlignment = .leading
-    var isMonospaced: Bool = false
-    var hasStroke: Bool = true
-
-    var body: some View {
-        Text(text)
-            .font(.system(size: size, weight: .bold, design: isMonospaced ? .monospaced : .default))
-            .tracking(1)
-            .multilineTextAlignment(alignment)
-            .if(hasStroke) { view in
-                view.textStroke(color: color.opacity(0.6), width: size * 0.04)
-            }
-            .foregroundColor(color)
-    }
-}
+// BrutalistText is defined in BrutalistText.swift
 
 // View extension for conditional modifiers is already defined in ColorExtensions.swift
 
@@ -220,9 +201,9 @@ struct BrutalistText: View {
 
             BrutalistGrid(columns: 1, accentColor: .orange, headerTitle: "BRUTALIST DATA") {
                 VStack {
-                    BrutalistText(text: "INTENT", size: 32, color: .orange)
+                    BrutalistText("INTENT", style: .title)
                         .frame(maxWidth: .infinity)
-                    BrutalistText(text: "WITH CLEAR INTENT", size: 12, color: .orange, alignment: .center, isMonospaced: true)
+                    BrutalistText("WITH CLEAR INTENT", style: .caption)
                         .frame(maxWidth: .infinity)
                 }
                 .frame(height: 120)

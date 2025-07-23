@@ -219,7 +219,7 @@ struct CloudStoragePickerView: View {
             VStack(spacing: 8) {
                 // Provider icon
                 ZStack {
-                    UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(topLeading: 12, bottomLeading: 4, bottomTrailing: 12, topTrailing: 4), style: .continuous)
+                    UnevenRoundedRectangle(cornerRadii: [.topLeading: 12, .bottomLeading: 4, .bottomTrailing: 12, .topTrailing: 4], style: .continuous)
                         .fill(isSelected(account) ? Color(DesignTokens.brutalistPrimary).opacity(0.2) : Color.black.opacity(0.3))
                         .frame(width: 48, height: 48)
                     

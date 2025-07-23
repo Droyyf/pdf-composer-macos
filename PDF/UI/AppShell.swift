@@ -75,7 +75,9 @@ class AppShellViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.showingPluginManager = true
+            Task { @MainActor in
+                self?.showingPluginManager = true
+            }
         }
         
         NotificationCenter.default.addObserver(
@@ -83,7 +85,9 @@ class AppShellViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.showingPluginInstaller = true
+            Task { @MainActor in
+                self?.showingPluginInstaller = true
+            }
         }
         
         NotificationCenter.default.addObserver(
@@ -91,7 +95,9 @@ class AppShellViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.showingPluginErrors = true
+            Task { @MainActor in
+                self?.showingPluginErrors = true
+            }
         }
         
         NotificationCenter.default.addObserver(

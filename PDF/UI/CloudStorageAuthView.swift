@@ -161,7 +161,7 @@ struct CloudStorageAuthView: View {
             HStack(spacing: 16) {
                 // Provider icon
                 ZStack {
-                    UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2), style: .continuous)
+                    UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
                         .fill(Color(DesignTokens.brutalistPrimary).opacity(0.1))
                         .frame(width: 48, height: 48)
                     

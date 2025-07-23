@@ -224,7 +224,6 @@ final class CloudStorageManager: ObservableObject {
     
     /// Update account status
     func updateAccount(_ account: CloudAccount, isActive: Bool) throws {
-        var updatedAccount = account
         // Create a new account with updated isActive status
         let newAccount = CloudAccount(
             id: account.id,

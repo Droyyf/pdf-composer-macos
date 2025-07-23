@@ -2,6 +2,11 @@ import Foundation
 import PDFKit
 import AppKit
 
+// MARK: - NSImage Sendable Conformance
+// NSImage is thread-safe for read operations, so we mark it as @unchecked Sendable
+// The warning about future conformance is expected and acceptable for our use case
+extension NSImage: @unchecked Sendable {}
+
 // MARK: - Thumbnail Loading Options
 struct ThumbnailOptions {
     let size: CGSize

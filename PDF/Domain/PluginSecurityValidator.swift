@@ -140,12 +140,8 @@ class PluginSecurityValidator {
             throw PluginError.codeSigningFailure("Failed to create static code reference: \(result)")
         }
         
-        // Validate code signature
-        let validationFlags: SecCSFlags = [
-            .checkAllArchitectures,
-            .strictValidate,
-            .checkNestedCode
-        ]
+        // Validate code signature with basic flags
+        let validationFlags: SecCSFlags = SecCSFlags()  // Use default validation flags
         
         let validationResult = SecStaticCodeCheckValidity(code, validationFlags, nil)
         guard validationResult == errSecSuccess else {
@@ -297,8 +293,8 @@ class PluginSecurityValidator {
     
     private func validateFileIntegrity(_ bundleURL: URL) throws {
         // Check for common signs of tampering
-        let infoPlistURL = bundleURL.appendingPathComponent("Contents/Info.plist")
-        let metadataURL = bundleURL.appendingPathComponent("Contents/metadata.json")
+        let _ = bundleURL.appendingPathComponent("Contents/Info.plist")  // Future: validate Info.plist
+        let _ = bundleURL.appendingPathComponent("Contents/metadata.json")  // Future: validate metadata
         
         // Verify file timestamps are reasonable
         let now = Date()

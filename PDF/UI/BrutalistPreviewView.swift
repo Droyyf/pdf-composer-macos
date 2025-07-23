@@ -312,9 +312,9 @@ class PDFImageCache {
     }
 }
 
-// Cache delegate for monitoring
+// Cache delegate for monitoring  
 private class CacheDelegate: NSObject, NSCacheDelegate {
-    func cache(_ cache: NSCache<AnyObject, AnyObject>, willEvictObject obj: AnyObject) {
+    @objc func cache(_ cache: NSCache<AnyObject, AnyObject>, willEvictObject obj: AnyObject) {
         print("🗑️ Cache evicting object due to memory pressure")
     }
 }
@@ -1162,6 +1162,13 @@ struct BrutalistPreviewView: View {
                                     }
                                     outputURL = directory.appendingPathComponent(filename).appendingPathExtension("pdf")
                                     outputData = pdfData
+                                    
+                                case .jpeg:
+                                    guard let jpegData = outputImage.jpegData(compressionQuality: 0.9), jpegData.count > 0 else {
+                                        return ExportResult.failure(index: citationIdx, error: "JPEG export failed for page \(citationIdx+1): Unable to convert to JPEG format")
+                                    }
+                                    outputURL = directory.appendingPathComponent(filename).appendingPathExtension("jpeg")
+                                    outputData = jpegData
                                 }
                                 
                                 // Write file atomically
