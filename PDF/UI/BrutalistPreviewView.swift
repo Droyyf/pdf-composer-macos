@@ -428,7 +428,7 @@ struct BrutalistPreviewView: View {
             .padding(5) // Reduced padding for more content space
         }
         // Restore proper aspect ratio constraints for containers
-        .aspectRatio(selectedMode == .sideBySide ? 1.6 : 0.8, contentMode: .fit)
+        .aspectRatio(selectedMode == .centerCitation ? 1.6 : 0.8, contentMode: .fit)
         .frame(
             minHeight: 400,
             idealHeight: 600,
@@ -960,7 +960,7 @@ struct BrutalistPreviewView: View {
     
     private var filteredFrames: [String] {
         availableFrames.filter { frame in
-            if selectedMode == .sideBySide {
+            if selectedMode == .centerCitation {
                 return frame.hasPrefix("frame") && (frame.hasSuffix("H") || frame.contains("H"))
             } else {
                 return frame.hasPrefix("frame") && (frame.hasSuffix("V") || frame.contains("V"))
@@ -1009,7 +1009,7 @@ struct BrutalistPreviewView: View {
     }
     
     private var currentSelectedFrame: String {
-        selectedMode == .sideBySide ? selectedHorizontalFrame : selectedVerticalFrame
+        selectedMode == .centerCitation ? selectedHorizontalFrame : selectedVerticalFrame
     }
     
     @ViewBuilder
@@ -1059,8 +1059,8 @@ struct BrutalistPreviewView: View {
     @ViewBuilder
     private var sideBySideButton: some View {
         Button {
-            selectedMode = .sideBySide
-            viewModel.compositionMode = .sideBySide
+            selectedMode = .centerCitation
+            viewModel.compositionMode = .centerCitation
             refreshID = UUID() // Force refresh
         } label: {
             HStack {
@@ -1074,13 +1074,13 @@ struct BrutalistPreviewView: View {
             .padding(.vertical, 8)
             .background(
                 UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
-                    .fill(selectedMode == .sideBySide ? Color(DesignTokens.brutalistPrimary).opacity(0.3) : Color.black.opacity(0.2))
+                    .fill(selectedMode == .centerCitation ? Color(DesignTokens.brutalistPrimary).opacity(0.3) : Color.black.opacity(0.2))
                     .overlay(
                         UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
-                            .strokeBorder(selectedMode == .sideBySide ? Color(DesignTokens.brutalistPrimary) : Color.white.opacity(0.2), lineWidth: 1)
+                            .strokeBorder(selectedMode == .centerCitation ? Color(DesignTokens.brutalistPrimary) : Color.white.opacity(0.2), lineWidth: 1)
                     )
             )
-            .foregroundColor(selectedMode == .sideBySide ? Color(DesignTokens.brutalistPrimary) : .white.opacity(0.6))
+            .foregroundColor(selectedMode == .centerCitation ? Color(DesignTokens.brutalistPrimary) : .white.opacity(0.6))
         }
         .buttonStyle(PlainButtonStyle())
     }
