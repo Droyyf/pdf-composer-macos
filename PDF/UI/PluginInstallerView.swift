@@ -101,8 +101,8 @@ struct PluginInstallerView: View {
         .padding(.vertical, 16)
         .padding(.horizontal, 20)
         .background(
-            BrutalistCard()
-                .fill(.ultraThinMaterial)
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
+            .fill(.ultraThinMaterial)
         )
     }
     
@@ -134,12 +134,12 @@ struct PluginInstallerView: View {
         }
         .padding(24)
         .background(
-            BrutalistCard()
-                .fill(.regularMaterial)
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
+            .fill(.regularMaterial)
         )
         .overlay(
-            BrutalistCard()
-                .stroke(.tertiary, lineWidth: 2)
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
+            .stroke(.secondary, lineWidth: 2)
         )
     }
     
@@ -160,7 +160,7 @@ struct PluginInstallerView: View {
                 .fill(selectedInstallMethod == method ? .blue.opacity(0.1) : .clear)
                 .overlay(
                     Rectangle()
-                        .stroke(selectedInstallMethod == method ? .blue : .tertiary, lineWidth: 2)
+                        .stroke(selectedInstallMethod == method ? .blue : .secondary, lineWidth: 2)
                 )
         )
         .onTapGesture {
@@ -248,7 +248,7 @@ struct PluginInstallerView: View {
                     .fill(.quaternary)
                     .overlay(
                         Rectangle()
-                            .stroke(.tertiary, lineWidth: 1)
+                            .stroke(.secondary, lineWidth: 1)
                     )
             )
         }
@@ -350,12 +350,12 @@ struct PluginInstallerView: View {
         }
         .padding(40)
         .background(
-            BrutalistCard()
-                .fill(.regularMaterial)
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
+            .fill(.regularMaterial)
         )
         .overlay(
-            BrutalistCard()
-                .stroke(.tertiary, lineWidth: 2)
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
+            .stroke(.secondary, lineWidth: 2)
         )
     }
     
@@ -406,8 +406,8 @@ struct PluginInstallerView: View {
         .padding(.vertical, 16)
         .padding(.horizontal, 20)
         .background(
-            BrutalistCard()
-                .fill(.ultraThinMaterial)
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 8, .bottomLeading: 2, .bottomTrailing: 8, .topTrailing: 2], style: .continuous)
+            .fill(.ultraThinMaterial)
         )
     }
     
@@ -503,7 +503,7 @@ struct BrutalistProgressViewStyle: ProgressViewStyle {
                 )
                 .overlay(
                     Rectangle()
-                        .stroke(.tertiary, lineWidth: 2)
+                        .stroke(.secondary, lineWidth: 2)
                 )
         }
         .frame(height: 8)

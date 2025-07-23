@@ -218,7 +218,7 @@ struct CloudStorageAccountsView: View {
             HStack(spacing: 16) {
                 // Provider icon
                 ZStack {
-                    UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(topLeading: 12, bottomLeading: 4, bottomTrailing: 12, topTrailing: 4), style: .continuous)
+                    UnevenRoundedRectangle(cornerRadii: [.topLeading: 12, .bottomLeading: 4, .bottomTrailing: 12, .topTrailing: 4], style: .continuous)
                         .fill(Color(DesignTokens.brutalistPrimary).opacity(0.1))
                         .frame(width: 56, height: 56)
                     
@@ -366,7 +366,7 @@ struct CloudStorageAccountsView: View {
         }
         .padding(12)
         .background(
-            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(topLeading: 4, bottomLeading: 8, bottomTrailing: 4, topTrailing: 8), style: .continuous)
+            UnevenRoundedRectangle(cornerRadii: [.topLeading: 4, .bottomLeading: 8, .bottomTrailing: 4, .topTrailing: 8], style: .continuous)
                 .fill(Color.black.opacity(0.2))
         )
     }
