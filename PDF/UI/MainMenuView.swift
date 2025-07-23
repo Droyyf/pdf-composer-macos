@@ -57,6 +57,8 @@ struct MainMenuView: View {
     @State private var showFileImporter = false
     @State private var animateLogo = false
     @State private var loadError: String? = nil
+    @State private var showCloudPopover = false
+    @StateObject private var cloudManager = CloudStorageManager.shared
     
     // Configuration
     private let posterConfig = PosterConfiguration.main
@@ -103,6 +105,224 @@ struct MainMenuView: View {
     // MARK: - View Components
     
     @ViewBuilder
+    private func cloudSignInArea(layout: LayoutConfiguration, geo: GeometryProxy) -> some View {
+        Button(action: {
+            withAnimation(DesignTokens.cardTapAnimation) {
+                showCloudPopover.toggle()
+            }
+        }) {
+            HStack(spacing: max(geo.size.width * 0.008, 6)) {
+                // Cloud status indicator
+                ZStack {
+                    // Brutalist background shape with asymmetric corners
+                    UnevenRoundedRectangle(
+                        cornerRadii: [
+                            .topLeading: 2,
+                            .bottomLeading: 0,
+                            .bottomTrailing: 8,
+                            .topTrailing: 0
+                        ],
+                        style: .continuous
+                    )
+                    .fill(DesignTokens.brutalistBlack.opacity(0.12))
+                    .frame(width: 28, height: 28)
+                    .overlay(
+                        UnevenRoundedRectangle(
+                            cornerRadii: [
+                                .topLeading: 2,
+                                .bottomLeading: 0,
+                                .bottomTrailing: 8,
+                                .topTrailing: 0
+                            ],
+                            style: .continuous
+                        )
+                        .strokeBorder(DesignTokens.brutalistBlack.opacity(0.25), lineWidth: 1.5)
+                    )
+                    
+                    // Cloud icon
+                    Image(systemName: cloudManager.connectedAccounts.isEmpty ? "cloud" : "cloud.fill")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(DesignTokens.brutalistBlack.opacity(0.7))
+                }
+                
+                // Connection status text with brutalist typography
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(cloudConnectionStatusText)
+                        .font(.custom("HelveticaNeue-Bold", size: max(layout.subElementFontSize * 0.7, 10)))
+                        .tracking(0.5)
+                        .foregroundColor(DesignTokens.brutalistBlack.opacity(0.8))
+                        .lineLimit(1)
+                    
+                    if !cloudManager.connectedAccounts.isEmpty {
+                        Text("\(cloudManager.connectedAccounts.count) connected")
+                            .font(.custom("HelveticaNeue-Medium", size: max(layout.subElementFontSize * 0.6, 8)))
+                            .tracking(0.3)
+                            .foregroundColor(DesignTokens.brutalistBlack.opacity(0.6))
+                            .lineLimit(1)
+                    }
+                }
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .accessibilityLabel("Cloud Storage")
+        .accessibilityHint("Tap to manage cloud storage connections")
+        .popover(isPresented: $showCloudPopover, arrowEdge: .bottom) {
+            cloudSignInPopover()
+        }
+    }
+    
+    @ViewBuilder
+    private func cloudSignInPopover() -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header with brutalist styling
+            VStack(alignment: .leading, spacing: 8) {
+                Text("CLOUD STORAGE")
+                    .font(.custom("HelveticaNeue-Bold", size: 16))
+                    .tracking(1.2)
+                    .foregroundColor(DesignTokens.brutalistBlack)
+                
+                Text("Connect your cloud accounts")
+                    .font(.custom("HelveticaNeue-Medium", size: 12))
+                    .tracking(0.3)
+                    .foregroundColor(DesignTokens.brutalistBlack.opacity(0.7))
+            }
+            
+            Divider()
+                .background(DesignTokens.brutalistBlack.opacity(0.2))
+            
+            // Provider list
+            VStack(spacing: 12) {
+                ForEach(CloudProvider.allCases, id: \.self) { provider in
+                    cloudProviderRow(provider: provider)
+                }
+            }
+        }
+        .padding(20)
+        .frame(width: 280)
+        .background(DesignTokens.brutalistPrimary.opacity(0.95))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(DesignTokens.brutalistBlack.opacity(0.15), lineWidth: 1)
+        )
+    }
+    
+    @ViewBuilder
+    private func cloudProviderRow(provider: CloudProvider) -> some View {
+        let connectedAccount = cloudManager.accounts(for: provider).first
+        let isConnected = connectedAccount != nil
+        
+        HStack(spacing: 12) {
+            // Provider icon with brutalist styling
+            ZStack {
+                UnevenRoundedRectangle(
+                    cornerRadii: [
+                        .topLeading: 0,
+                        .bottomLeading: 6,
+                        .bottomTrailing: 0,
+                        .topTrailing: 4
+                    ],
+                    style: .continuous
+                )
+                .fill(isConnected ? DesignTokens.brutalistBlack.opacity(0.15) : DesignTokens.brutalistBlack.opacity(0.08))
+                .frame(width: 32, height: 32)
+                .overlay(
+                    UnevenRoundedRectangle(
+                        cornerRadii: [
+                            .topLeading: 0,
+                            .bottomLeading: 6,
+                            .bottomTrailing: 0,
+                            .topTrailing: 4
+                        ],
+                        style: .continuous
+                    )
+                    .strokeBorder(DesignTokens.brutalistBlack.opacity(0.2), lineWidth: 1)
+                )
+                
+                Image(systemName: provider.iconName)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(DesignTokens.brutalistBlack.opacity(0.8))
+            }
+            
+            // Provider info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(provider.displayName)
+                    .font(.custom("HelveticaNeue-Bold", size: 13))
+                    .tracking(0.3)
+                    .foregroundColor(DesignTokens.brutalistBlack)
+                
+                if let account = connectedAccount {
+                    Text(account.email)
+                        .font(.custom("HelveticaNeue-Medium", size: 11))
+                        .tracking(0.2)
+                        .foregroundColor(DesignTokens.brutalistBlack.opacity(0.6))
+                        .lineLimit(1)
+                } else {
+                    Text("Not connected")
+                        .font(.custom("HelveticaNeue-Medium", size: 11))
+                        .tracking(0.2)
+                        .foregroundColor(DesignTokens.brutalistBlack.opacity(0.5))
+                }
+            }
+            
+            Spacer()
+            
+            // Action button
+            Button(action: {
+                Task {
+                    if isConnected, let account = connectedAccount {
+                        try? await cloudManager.signOut(account: account)
+                    } else {
+                        try? await cloudManager.authenticate(provider: provider)
+                    }
+                }
+            }) {
+                ZStack {
+                    UnevenRoundedRectangle(
+                        cornerRadii: [
+                            .topLeading: 2,
+                            .bottomLeading: 0,
+                            .bottomTrailing: 6,
+                            .topTrailing: 0
+                        ],
+                        style: .continuous
+                    )
+                    .fill(isConnected ? DesignTokens.brutalistBlack.opacity(0.15) : DesignTokens.brutalistBlack.opacity(0.1))
+                    .frame(width: 60, height: 24)
+                    .overlay(
+                        UnevenRoundedRectangle(
+                            cornerRadii: [
+                                .topLeading: 2,
+                                .bottomLeading: 0,
+                                .bottomTrailing: 6,
+                                .topTrailing: 0
+                            ],
+                            style: .continuous
+                        )
+                        .strokeBorder(DesignTokens.brutalistBlack.opacity(0.25), lineWidth: 1)
+                    )
+                    
+                    Text(isConnected ? "SIGN OUT" : "CONNECT")
+                        .font(.custom("HelveticaNeue-Bold", size: 9))
+                        .tracking(0.8)
+                        .foregroundColor(DesignTokens.brutalistBlack.opacity(0.8))
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            .disabled(cloudManager.isAuthenticating)
+        }
+    }
+    
+    private var cloudConnectionStatusText: String {
+        if cloudManager.isAuthenticating {
+            return "CONNECTING..."
+        } else if cloudManager.connectedAccounts.isEmpty {
+            return "CLOUD"
+        } else {
+            return "CONNECTED"
+        }
+    }
+    
+    @ViewBuilder
     private func titleSection(layout: LayoutConfiguration, responsiveLayout: ResponsiveLayout, geo: GeometryProxy) -> some View {
         ZStack(alignment: .bottomLeading) {
             DesignTokens.brutalistPrimary
@@ -110,15 +330,27 @@ struct MainMenuView: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 0) {
-                Text("PDF")
-                    .font(.custom("Helvetica Black Original", size: layout.titleFontSize))
-                    .tracking(layout.titleTracking)
-                    .lineSpacing(layout.titleLineSpacing)
-                    .foregroundColor(DesignTokens.brutalistBlack)
+                // Title row with cloud sign-in area
+                HStack(alignment: .top, spacing: 0) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("PDF")
+                            .font(.custom("Helvetica Black Original", size: layout.titleFontSize))
+                            .tracking(layout.titleTracking)
+                            .lineSpacing(layout.titleLineSpacing)
+                            .foregroundColor(DesignTokens.brutalistBlack)
+                            .accessibilityLabel("PDF Application")
+                            .accessibilityAddTraits(.isHeader)
+                    }
                     .padding(.leading, layout.horizontalPadding)
                     .offset(y: layout.titleOffset)
-                    .accessibilityLabel("PDF Application")
-                    .accessibilityAddTraits(.isHeader)
+                    
+                    Spacer()
+                    
+                    // Cloud sign-in area - positioned in upper right of title area
+                    cloudSignInArea(layout: layout, geo: geo)
+                        .padding(.trailing, layout.horizontalPadding)
+                        .padding(.top, max(layout.verticalPadding, 8))
+                }
 
                 posterSubElementsView(layout: layout, geo: geo)
                     .padding(.horizontal, layout.horizontalPadding)
@@ -126,8 +358,10 @@ struct MainMenuView: View {
                     .accessibilityHidden(true) // Decorative elements
             }
             
-            // Options button positioned in top-right
+            // Options button positioned in bottom right of title area
             VStack {
+                Spacer()
+                
                 HStack {
                     Spacer()
                     
@@ -140,45 +374,39 @@ struct MainMenuView: View {
                             // Brutalist background shape
                             UnevenRoundedRectangle(
                                 cornerRadii: [
-                                    .topLeading: 0,
-                                    .bottomLeading: 12,
+                                    .topLeading: 4,
+                                    .bottomLeading: 0,
                                     .bottomTrailing: 0,
-                                    .topTrailing: 0
+                                    .topTrailing: 8
                                 ],
                                 style: .continuous
                             )
                             .fill(DesignTokens.brutalistBlack.opacity(0.15))
-                            .frame(width: 44, height: 44)
+                            .frame(width: 36, height: 36)
                             .overlay(
                                 UnevenRoundedRectangle(
                                     cornerRadii: [
-                                        .topLeading: 0,
-                                        .bottomLeading: 12,
+                                        .topLeading: 4,
+                                        .bottomLeading: 0,
                                         .bottomTrailing: 0,
-                                        .topTrailing: 0
+                                        .topTrailing: 8
                                     ],
                                     style: .continuous
                                 )
-                                .strokeBorder(DesignTokens.brutalistBlack.opacity(0.3), lineWidth: 2)
+                                .strokeBorder(DesignTokens.brutalistBlack.opacity(0.25), lineWidth: 1.5)
                             )
                             
                             Image(systemName: "gearshape.fill")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(DesignTokens.brutalistBlack.opacity(0.8))
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(DesignTokens.brutalistBlack.opacity(0.7))
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .scaleEffect(1.0)
-                    .onHover { hovering in
-                        // Add subtle hover effect
-                    }
                     .accessibilityLabel("Open Options")
                     .accessibilityHint("Opens the options and settings menu")
                 }
                 .padding(.horizontal, layout.horizontalPadding)
-                .padding(.top, 8)
-                
-                Spacer()
+                .padding(.bottom, max(layout.verticalPadding, 8))
             }
         }
     }
