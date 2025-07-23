@@ -107,7 +107,9 @@ struct PluginManagerView: View {
         .padding(.vertical, 16)
         .padding(.horizontal, 20)
         .background(
-            BrutalistCard()
+            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(
+                topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2
+            ))
                 .fill(.ultraThinMaterial)
         )
     }
@@ -163,11 +165,15 @@ struct PluginManagerView: View {
             }
         }
         .background(
-            BrutalistCard()
+            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(
+                topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2
+            ))
                 .fill(.regularMaterial)
         )
         .overlay(
-            BrutalistCard()
+            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(
+                topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2
+            ))
                 .stroke(.tertiary, lineWidth: 2)
         )
     }
@@ -213,11 +219,15 @@ struct PluginManagerView: View {
             }
         }
         .background(
-            BrutalistCard()
+            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(
+                topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2
+            ))
                 .fill(.regularMaterial)
         )
         .overlay(
-            BrutalistCard()
+            UnevenRoundedRectangle(cornerRadii: RectangleCornerRadii(
+                topLeading: 8, bottomLeading: 2, bottomTrailing: 8, topTrailing: 2
+            ))
                 .stroke(.tertiary, lineWidth: 2)
         )
     }
