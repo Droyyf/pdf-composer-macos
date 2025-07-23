@@ -385,6 +385,180 @@ struct BrutalistPreviewView: View {
     private var currentFrame: String {
         selectedMode == .centerCitation ? selectedHorizontalFrame : selectedVerticalFrame
     }
+    
+    // MARK: - Preview Content Views
+    
+    @ViewBuilder
+    private var previewContent: some View {
+        if let doc = viewModel.pdfDocument,
+           let coverIdx = viewModel.coverPageIndex,
+           coverIdx < doc.pageCount,
+           !viewModel.citationPageIndices.isEmpty,
+           viewModel.citationPageIndices.allSatisfy({ $0 < doc.pageCount }),
+           let coverPage = doc.page(at: coverIdx) {
+            
+            validPreviewContent(doc: doc, coverPage: coverPage)
+        } else {
+            noContentSelectedView
+        }
+    }
+    
+    @ViewBuilder
+    private func validPreviewContent(doc: PDFDocument, coverPage: PDFPage) -> some View {
+        // Preview content area - different container based on mode
+        ZStack {
+            Rectangle()
+                .fill(Color.black.opacity(0.4))
+                .brutalistTexture(style: .noise, intensity: 0.2, color: .white)
+
+            VStack(spacing: 8) {
+                previewModeContent(doc: doc, coverPage: coverPage)
+                
+                // Count of citation pages if more than one
+                if viewModel.citationPageIndices.count > 1 {
+                    BrutalistTechnicalText(
+                        text: "\(viewModel.citationPageIndices.count) CITATION PAGES SELECTED",
+                        color: Color(DesignTokens.brutalistPrimary),
+                        size: 12,
+                        addDecorators: true,
+                        align: .center
+                    )
+                }
+            }
+            .padding(5) // Reduced padding for more content space
+        }
+        // Restore proper aspect ratio constraints for containers
+        .aspectRatio(selectedMode == .sideBySide ? 1.6 : 0.8, contentMode: .fit)
+        .frame(
+            minHeight: 400,
+            idealHeight: 600,
+            maxHeight: 800
+        )
+        .overlay(
+            UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
+                .strokeBorder(
+                    isTransitioning ? 
+                        Color(DesignTokens.brutalistPrimary).opacity(0.8) : 
+                        Color(DesignTokens.brutalistPrimary).opacity(0.5), 
+                    lineWidth: isTransitioning ? 2 : 1
+                )
+                .animation(.easeInOut(duration: 0.3), value: isTransitioning)
+        )
+        .padding(.horizontal, 24)
+        .scaleEffect(isTransitioning ? 0.98 : 1.0)
+        .opacity(isTransitioning ? 0.8 : 1.0)
+        .animation(.easeInOut(duration: 0.3), value: selectedMode)
+        .animation(.easeInOut(duration: 0.3), value: isTransitioning)
+    }
+    
+    @ViewBuilder
+    private func previewModeContent(doc: PDFDocument, coverPage: PDFPage) -> some View {
+        if selectedMode == .centerCitation {
+            centerCitationView(doc: doc, coverPage: coverPage)
+        } else {
+            customOverlayView(doc: doc, coverPage: coverPage)
+        }
+    }
+    
+    @ViewBuilder
+    private func centerCitationView(doc: PDFDocument, coverPage: PDFPage) -> some View {
+        // Multiple citation pages: show all as a scrollable list of pairs
+        ZoomableScrollView(zoomScale: $zoomScale, lastZoomValue: $lastZoomValue) {
+            VStack(spacing: 24) {
+                ForEach(viewModel.citationPageIndices.sorted(), id: \.self) { citationIdx in
+                    if let citationPage = doc.page(at: citationIdx) {
+                        ImprovedSideBySideView(citationPage: citationPage, coverPage: coverPage, showFrame: showOrnateFrame, frameName: selectedHorizontalFrame)
+                            .id("side_by_side_\(citationIdx)_\(refreshID)")
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+        }
+    }
+    
+    @ViewBuilder
+    private func customOverlayView(doc: PDFDocument, coverPage: PDFPage) -> some View {
+        // Custom overlay view: show all selected citation pages
+        // If only one citation page, no need for a list but still zoomable
+        if viewModel.citationPageIndices.count == 1, 
+           let citationIdx = viewModel.citationPageIndices.first, 
+           let citationPage = doc.page(at: citationIdx) {
+            singleCustomOverlayView(citationPage: citationPage, coverPage: coverPage, citationIdx: citationIdx)
+        } else {
+            multipleCustomOverlayView(doc: doc, coverPage: coverPage)
+        }
+    }
+    
+    @ViewBuilder
+    private func singleCustomOverlayView(citationPage: PDFPage, coverPage: PDFPage, citationIdx: Int) -> some View {
+        ZoomableScrollView(zoomScale: $zoomScale, lastZoomValue: $lastZoomValue) {
+            ImprovedCustomOverlayView(
+                citationPage: citationPage,
+                coverPage: coverPage,
+                coverPosition: $viewModel.coverPosition,
+                coverSize: $viewModel.coverSize,
+                showFrame: showOrnateFrame,
+                frameName: selectedVerticalFrame
+            )
+            .id("custom_\(citationIdx)_\(refreshID)")
+            .frame(maxWidth: .infinity)
+        }
+    }
+    
+    @ViewBuilder
+    private func multipleCustomOverlayView(doc: PDFDocument, coverPage: PDFPage) -> some View {
+        // Multiple citation pages: show all as a scrollable list
+        ZoomableScrollView(zoomScale: $zoomScale, lastZoomValue: $lastZoomValue) {
+            VStack(spacing: 24) {
+                ForEach(viewModel.citationPageIndices.sorted(), id: \.self) { citationIdx in
+                    if let citationPage = doc.page(at: citationIdx) {
+                        ImprovedCustomOverlayView(
+                            citationPage: citationPage,
+                            coverPage: coverPage,
+                            coverPosition: $viewModel.coverPosition,
+                            coverSize: $viewModel.coverSize,
+                            showFrame: showOrnateFrame,
+                            frameName: selectedVerticalFrame
+                        )
+                        .id("custom_\(citationIdx)_\(refreshID)")
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+        }
+    }
+    
+    @ViewBuilder
+    private var noContentSelectedView: some View {
+        // No content selected view
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 40))
+                .foregroundColor(Color(DesignTokens.brutalistPrimary).opacity(0.7))
+
+            BrutalistBlockText(
+                title: "No Content Selected",
+                subtitle: "MISSING SELECTIONS",
+                description: "Return to the main view and ensure you have selected both citation pages and a cover page.",
+                textColor: Color.white,
+                showTechnicalElements: true,
+                alignment: .center
+            )
+        }
+        .frame(maxWidth: .infinity, maxHeight: 300)
+        .background(
+            Rectangle()
+                .fill(Color.black.opacity(0.4))
+                .brutalistTexture(style: .grain, intensity: 0.2, color: .white)
+        )
+        .overlay(
+            UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
+                .strokeBorder(Color(DesignTokens.brutalistPrimary).opacity(0.5), lineWidth: 1)
+        )
+        .padding(.horizontal, 24)
+    }
 
     var body: some View {
         ZStack {
@@ -401,137 +575,7 @@ struct BrutalistPreviewView: View {
                     .padding(.horizontal, 24)
 
                 // Preview content
-                if let doc = viewModel.pdfDocument,
-                   let coverIdx = viewModel.coverPageIndex,
-                   coverIdx < doc.pageCount,
-                   !viewModel.citationPageIndices.isEmpty,
-                   viewModel.citationPageIndices.allSatisfy({ $0 < doc.pageCount }),
-                   let coverPage = doc.page(at: coverIdx) {
-
-                    // Preview content area - different container based on mode
-                    ZStack {
-                        Rectangle()
-                            .fill(Color.black.opacity(0.4))
-                            .brutalistTexture(style: .noise, intensity: 0.2, color: .white)
-
-                        VStack(spacing: 8) {
-                            if selectedMode == .centerCitation {
-                                // Multiple citation pages: show all as a scrollable list of pairs
-                                ZoomableScrollView(zoomScale: $zoomScale, lastZoomValue: $lastZoomValue) {
-                                    VStack(spacing: 24) {
-                                        ForEach(viewModel.citationPageIndices.sorted(), id: \ .self) { citationIdx in
-                                            if let citationPage = doc.page(at: citationIdx) {
-                                                ImprovedSideBySideView(citationPage: citationPage, coverPage: coverPage, showFrame: showOrnateFrame, frameName: selectedHorizontalFrame)
-                                                    .id("side_by_side_\(citationIdx)_\(refreshID)")
-                                                    .frame(maxWidth: .infinity)
-                                            }
-                                        }
-                                    }
-                                    .padding(.vertical, 8)
-                                }
-                            } else {
-                                // Custom overlay view: show all selected citation pages
-                                // If only one citation page, no need for a list but still zoomable
-                                if viewModel.citationPageIndices.count == 1, let citationIdx = viewModel.citationPageIndices.first, let citationPage = doc.page(at: citationIdx) {
-                                    ZoomableScrollView(zoomScale: $zoomScale, lastZoomValue: $lastZoomValue) {
-                                        ImprovedCustomOverlayView(
-                                            citationPage: citationPage,
-                                            coverPage: coverPage,
-                                            coverPosition: $viewModel.coverPosition,
-                                            coverSize: $viewModel.coverSize,
-                                            showFrame: showOrnateFrame,
-                                            frameName: selectedVerticalFrame
-                                        )
-                                        .id("custom_\(citationIdx)_\(refreshID)")
-                                        .frame(maxWidth: .infinity)
-                                    }
-                                } else {
-                                    // Multiple citation pages: show all as a scrollable list
-                                    ZoomableScrollView(zoomScale: $zoomScale, lastZoomValue: $lastZoomValue) {
-                                        VStack(spacing: 24) {
-                                            ForEach(viewModel.citationPageIndices.sorted(), id: \ .self) { citationIdx in
-                                                if let citationPage = doc.page(at: citationIdx) {
-                                                    ImprovedCustomOverlayView(
-                                                        citationPage: citationPage,
-                                                        coverPage: coverPage,
-                                                        coverPosition: $viewModel.coverPosition,
-                                                        coverSize: $viewModel.coverSize,
-                                                        showFrame: showOrnateFrame,
-                                                        frameName: selectedVerticalFrame
-                                                    )
-                                                    .id("custom_\(citationIdx)_\(refreshID)")
-                                                    .frame(maxWidth: .infinity)
-                                                }
-                                            }
-                                        }
-                                        .padding(.vertical, 8)
-                                    }
-                                }
-                            }
-
-                            // Count of citation pages if more than one
-                            if viewModel.citationPageIndices.count > 1 {
-                                BrutalistTechnicalText(
-                                    text: "\(viewModel.citationPageIndices.count) CITATION PAGES SELECTED",
-                                    color: Color(DesignTokens.brutalistPrimary),
-                                    size: 12,
-                                    addDecorators: true,
-                                    align: .center
-                                )
-                            }
-                        }
-                        .padding(5) // Reduced padding for more content space
-                    }
-                    // Restore proper aspect ratio constraints for containers
-                    .aspectRatio(selectedMode == .sideBySide ? 1.6 : 0.8, contentMode: .fit)
-                    .frame(
-                        minHeight: 400,
-                        idealHeight: 600,
-                        maxHeight: 800
-                    )
-                    .overlay(
-                        UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
-                            .strokeBorder(
-                                isTransitioning ? 
-                                    Color(DesignTokens.brutalistPrimary).opacity(0.8) : 
-                                    Color(DesignTokens.brutalistPrimary).opacity(0.5), 
-                                lineWidth: isTransitioning ? 2 : 1
-                            )
-                            .animation(.easeInOut(duration: 0.3), value: isTransitioning)
-                    )
-                    .padding(.horizontal, 24)
-                    .scaleEffect(isTransitioning ? 0.98 : 1.0)
-                    .opacity(isTransitioning ? 0.8 : 1.0)
-                    .animation(.easeInOut(duration: 0.3), value: selectedMode)
-                    .animation(.easeInOut(duration: 0.3), value: isTransitioning)
-                } else {
-                    // No content selected view
-                    VStack(spacing: 16) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 40))
-                            .foregroundColor(Color(DesignTokens.brutalistPrimary).opacity(0.7))
-
-                        BrutalistBlockText(
-                            title: "No Content Selected",
-                            subtitle: "MISSING SELECTIONS",
-                            description: "Return to the main view and ensure you have selected both citation pages and a cover page.",
-                            textColor: Color.white,
-                            showTechnicalElements: true,
-                            alignment: .center
-                        )
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: 300)
-                    .background(
-                        Rectangle()
-                            .fill(Color.black.opacity(0.4))
-                            .brutalistTexture(style: .grain, intensity: 0.2, color: .white)
-                    )
-                    .overlay(
-                        UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
-                            .strokeBorder(Color(DesignTokens.brutalistPrimary).opacity(0.5), lineWidth: 1)
-                    )
-                    .padding(.horizontal, 24)
-                }
+                previewContent
 
                 // Action buttons
                 HStack(spacing: 30) {
@@ -708,331 +752,381 @@ struct BrutalistPreviewView: View {
         }
     }
 
-    // Brutalist header view
-    private var brutalistHeader: some View {
-        VStack(spacing: 0) {
-            // Main header bar
-            HStack {
-                // Title
+    // MARK: - Header Components
+    
+    @ViewBuilder
+    private var headerTitle: some View {
+        BrutalistHeading(
+            text: "COMPOSITION PREVIEW",
+            size: 24,
+            color: Color(DesignTokens.brutalistPrimary),
+            tracking: 1.5,
+            addStroke: true,
+            strokeWidth: 0.8
+        )
+    }
+    
+    @ViewBuilder  
+    private var headerBackButton: some View {
+        Button {
+            withAnimation {
+                viewModel.showPreview = false
+                viewModel.selectedAppScene = .mainMenu
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "doc.viewfinder")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(Color(DesignTokens.brutalistPrimary))
+
                 BrutalistHeading(
-                    text: "COMPOSITION PREVIEW",
-                    size: 24,
+                    text: "PDF",
+                    size: 22,
                     color: Color(DesignTokens.brutalistPrimary),
                     tracking: 1.5,
                     addStroke: true,
                     strokeWidth: 0.8
                 )
-
-                Spacer()
-
-                // Add PDF logo/button on the top right
+            }
+            .contentShape(Rectangle()) // Make entire area clickable
+        }
+        .buttonStyle(PlainButtonStyle()) // Use plain style to maintain appearance
+        .help("Return to Main Menu") // Add tooltip
+    }
+    
+    @ViewBuilder
+    private var headerMainBar: some View {
+        HStack {
+            headerTitle
+            Spacer()
+            headerBackButton
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+        .background(
+            Rectangle()
+                .fill(Color.black.opacity(0.6))
+                .brutalistTexture(style: .noise, intensity: 0.2, color: .white)
+        )
+    }
+    
+    @ViewBuilder
+    private var headerMetadataText: some View {
+        BrutalistTechnicalText(
+            text: "MODE:  \(selectedMode.rawValue.uppercased()) · FORMAT: \(selectedFormat.rawValue.uppercased())",
+            color: Color.white.opacity(0.6),
+            size: 10,
+            addDecorators: false,
+            align: .leading
+        )
+    }
+    
+    @ViewBuilder
+    private var headerFormatButtons: some View {
+        HStack(spacing: 12) {
+            ForEach(ExportService.ExportFormat.allCases, id: \.self) { format in
                 Button {
+                    selectedFormat = format
+                    viewModel.exportFormat = format
                     withAnimation {
-                        viewModel.showPreview = false
-                        viewModel.selectedAppScene = .mainMenu
+                        showToast = true
+                        toastMessage = "FORMAT CHANGED TO \(format.rawValue.uppercased())"
                     }
                 } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "doc.viewfinder")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(Color(DesignTokens.brutalistPrimary))
-
-                        BrutalistHeading(
-                            text: "PDF",
-                            size: 22,
-                            color: Color(DesignTokens.brutalistPrimary),
-                            tracking: 1.5,
-                            addStroke: true,
-                            strokeWidth: 0.8
+                    Text(format.rawValue.uppercased())
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(selectedFormat == format ?
+                                      Color(DesignTokens.brutalistPrimary).opacity(0.4) :
+                                      Color.black.opacity(0.2))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .strokeBorder(selectedFormat == format ?
+                                                      Color(DesignTokens.brutalistPrimary).opacity(0.8) :
+                                                      Color.white.opacity(0.2), lineWidth: 1)
+                                )
                         )
-                    }
-                    .contentShape(Rectangle()) // Make entire area clickable
                 }
-                .buttonStyle(PlainButtonStyle()) // Use plain style to maintain appearance
-                .help("Return to Main Menu") // Add tooltip
+                .buttonStyle(PlainButtonStyle())
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 12)
-            .background(
-                Rectangle()
-                    .fill(Color.black.opacity(0.6))
-                    .brutalistTexture(style: .noise, intensity: 0.2, color: .white)
-            )
+        }
+    }
+    
+    @ViewBuilder
+    private var headerTechnicalLine: some View {
+        HStack {
+            headerMetadataText
+            Spacer()
+            headerFormatButtons
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 8)
+        .background(Color.black.opacity(0.4))
+    }
 
-            // Technical line with metadata
+    // Brutalist header view
+    private var brutalistHeader: some View {
+        VStack(spacing: 0) {
+            headerMainBar
+            headerTechnicalLine
+        }
+    }
+
+    // MARK: - Mode Selector Components
+    
+    @ViewBuilder
+    private var modeSelectorTitle: some View {
+        BrutalistTechnicalText(
+            text: "COMPOSITION MODE",
+            color: Color.white.opacity(0.7),
+            size: 10,
+            addDecorators: true,
+            align: .leading
+        )
+    }
+    
+    @ViewBuilder
+    private var frameToggle: some View {
+        Toggle(isOn: $showOrnateFrame) {
+            HStack(spacing: 6) {
+                Image(systemName: "photo.on.rectangle")
+                    .font(.system(size: 12, weight: .medium))
+
+                Text("FRAME")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+            }
+            .foregroundColor(showOrnateFrame ? Color(DesignTokens.brutalistPrimary) : .white.opacity(0.6))
+        }
+        .toggleStyle(SwitchToggleStyle(tint: Color(DesignTokens.brutalistPrimary)))
+    }
+    
+    @ViewBuilder
+    private func frameSelectorButton(for frame: String) -> some View {
+        Button {
+            showFrameSelector.toggle()
+        } label: {
+            HStack(spacing: 4) {
+                Text(frame)
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .lineLimit(1)
+
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8, weight: .bold))
+            }
+            .foregroundColor(Color(DesignTokens.brutalistPrimary))
+            .padding(.vertical, 3)
+            .padding(.horizontal, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.black.opacity(0.4))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 3)
+                            .strokeBorder(Color(DesignTokens.brutalistPrimary).opacity(0.5), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .popover(isPresented: $showFrameSelector) {
+            frameSelectorPopover
+        }
+    }
+    
+    @ViewBuilder
+    private var frameSelectorPopover: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("SELECT FRAME")
+                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.top, 10)
+
+                Divider()
+                    .background(Color.white.opacity(0.2))
+
+                // List of available frames
+                ForEach(filteredFrames, id: \.self) { frameName in
+                    frameOption(frameName)
+                }
+            }
+            .frame(width: 200)
+        }
+        .frame(minHeight: 200)
+        .background(Color.black.opacity(0.9))
+    }
+    
+    private var filteredFrames: [String] {
+        availableFrames.filter { frame in
+            if selectedMode == .sideBySide {
+                return frame.hasPrefix("frame") && (frame.hasSuffix("H") || frame.contains("H"))
+            } else {
+                return frame.hasPrefix("frame") && (frame.hasSuffix("V") || frame.contains("V"))
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func frameOption(_ frameName: String) -> some View {
+        Button {
+            // Select the frame
+            if selectedMode == .centerCitation {
+                selectedHorizontalFrame = frameName
+            } else {
+                selectedVerticalFrame = frameName
+            }
+            refreshID = UUID() // Force refresh
+            showFrameSelector = false
+        } label: {
             HStack {
-                BrutalistTechnicalText(
-                    text: "MODE:  \(selectedMode.rawValue.uppercased()) · FORMAT: \(selectedFormat.rawValue.uppercased())",
-                    color: Color.white.opacity(0.6),
-                    size: 10,
-                    addDecorators: false,
-                    align: .leading
-                )
+                Text(frameName)
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
 
                 Spacer()
 
-                // Format buttons
-                HStack(spacing: 12) {
-                    ForEach(ExportFormat.allCases, id: \.self) { format in
-                        Button {
-                            selectedFormat = format
-                            viewModel.exportFormat = format
-                            withAnimation {
-                                showToast = true
-                                toastMessage = "FORMAT CHANGED TO \(format.rawValue.uppercased())"
-                            }
-                        } label: {
-                            Text(format.rawValue.uppercased())
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .padding(.vertical, 4)
-                                .padding(.horizontal, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .fill(selectedFormat == format ?
-                                              Color(DesignTokens.brutalistPrimary).opacity(0.4) :
-                                              Color.black.opacity(0.2))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 3)
-                                                .strokeBorder(selectedFormat == format ?
-                                                              Color(DesignTokens.brutalistPrimary).opacity(0.8) :
-                                                              Color.white.opacity(0.2), lineWidth: 1)
-                                        )
-                                )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
+                // Show checkmark for selected frame
+                if frameName == currentSelectedFrame {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold))
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+        .foregroundColor(.white)
+        .background(
+            RoundedRectangle(cornerRadius: 0)
+                .fill(
+                    frameName == currentSelectedFrame ?
+                    Color(DesignTokens.brutalistPrimary).opacity(0.3) :
+                    Color.clear
+                )
+        )
+    }
+    
+    private var currentSelectedFrame: String {
+        selectedMode == .sideBySide ? selectedHorizontalFrame : selectedVerticalFrame
+    }
+    
+    @ViewBuilder
+    private var centerCitationFrameControls: some View {
+        HStack(spacing: 12) {
+            frameToggle
+            
+            if showOrnateFrame {
+                Group {
+                    frameSelectorButton(for: selectedHorizontalFrame)
+                    createAnalyzeButton(for: selectedHorizontalFrame)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var customFrameControls: some View {
+        HStack(spacing: 12) {
+            frameToggle
+            
+            if showOrnateFrame {
+                Group {
+                    frameSelectorButton(for: selectedVerticalFrame)
+                    createAnalyzeButton(for: selectedVerticalFrame)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var frameControlsSection: some View {
+        HStack {
+            modeSelectorTitle
+            Spacer()
+            
+            // Show frame toggle and related controls
+            if selectedMode == .centerCitation {
+                centerCitationFrameControls
+            } else {
+                customFrameControls
+            }
+        }
+        .padding(.bottom, 4)
+    }
+    
+    @ViewBuilder
+    private var sideBySideButton: some View {
+        Button {
+            selectedMode = .sideBySide
+            viewModel.compositionMode = .sideBySide
+            refreshID = UUID() // Force refresh
+        } label: {
+            HStack {
+                Image(systemName: "rectangle.split.2x1")
+                    .font(.system(size: 14, weight: .medium))
+
+                Text("SIDE BY SIDE")
+                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+            }
+            .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
-            .background(Color.black.opacity(0.4))
+            .background(
+                UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
+                    .fill(selectedMode == .sideBySide ? Color(DesignTokens.brutalistPrimary).opacity(0.3) : Color.black.opacity(0.2))
+                    .overlay(
+                        UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
+                            .strokeBorder(selectedMode == .sideBySide ? Color(DesignTokens.brutalistPrimary) : Color.white.opacity(0.2), lineWidth: 1)
+                    )
+            )
+            .foregroundColor(selectedMode == .sideBySide ? Color(DesignTokens.brutalistPrimary) : .white.opacity(0.6))
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    @ViewBuilder
+    private var customOverlayButton: some View {
+        Button {
+            selectedMode = .custom
+            viewModel.compositionMode = .custom
+            refreshID = UUID() // Force refresh
+        } label: {
+            HStack {
+                Image(systemName: "rectangle.center.inset.filled")
+                    .font(.system(size: 14, weight: .medium))
+
+                Text("CUSTOM OVERLAY")
+                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(
+                UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
+                    .fill(selectedMode == .custom ? Color(DesignTokens.brutalistPrimary).opacity(0.3) : Color.black.opacity(0.2))
+                    .overlay(
+                        UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
+                            .strokeBorder(selectedMode == .custom ? Color(DesignTokens.brutalistPrimary) : Color.white.opacity(0.2), lineWidth: 1)
+                    )
+            )
+            .foregroundColor(selectedMode == .custom ? Color(DesignTokens.brutalistPrimary) : .white.opacity(0.6))
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    @ViewBuilder
+    private var modeButtons: some View {
+        HStack(spacing: 10) {
+            sideBySideButton
+            customOverlayButton
         }
     }
 
     // Mode selector view
     private var modeSelector: some View {
         VStack(spacing: 1) {
-            HStack {
-                BrutalistTechnicalText(
-                    text: "COMPOSITION MODE",
-                    color: Color.white.opacity(0.7),
-                    size: 10,
-                    addDecorators: true,
-                    align: .leading
-                )
-                Spacer()
-
-                // Show frame toggle and related controls
-                if selectedMode == .centerCitation {
-                    HStack(spacing: 12) {
-                        // Frame toggle
-                        Toggle(isOn: $showOrnateFrame) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "photo.on.rectangle")
-                                    .font(.system(size: 12, weight: .medium))
-
-                                Text("FRAME")
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            }
-                            .foregroundColor(showOrnateFrame ? Color(DesignTokens.brutalistPrimary) : .white.opacity(0.6))
-                        }
-                        .toggleStyle(SwitchToggleStyle(tint: Color(DesignTokens.brutalistPrimary)))
-
-                        // Frame selector button
-                        if showOrnateFrame {
-                            Button {
-                                showFrameSelector.toggle()
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Text(selectedMode == .sideBySide ? selectedHorizontalFrame : selectedVerticalFrame)
-                                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                        .lineLimit(1)
-
-                                    Image(systemName: "chevron.down")
-                                        .font(.system(size: 8, weight: .bold))
-                                }
-                                .foregroundColor(Color(DesignTokens.brutalistPrimary))
-                                .padding(.vertical, 3)
-                                .padding(.horizontal, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .fill(Color.black.opacity(0.4))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 3)
-                                                .strokeBorder(Color(DesignTokens.brutalistPrimary).opacity(0.5), lineWidth: 1)
-                                        )
-                                )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .popover(isPresented: $showFrameSelector) {
-                                ScrollView {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("SELECT FRAME")
-                                            .font(.system(size: 12, weight: .bold, design: .monospaced))
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 10)
-                                            .padding(.top, 10)
-
-                                        Divider()
-                                            .background(Color.white.opacity(0.2))
-
-                                        // List of available frames
-                                        ForEach(availableFrames.filter { selectedMode == .sideBySide ? $0.hasPrefix("frame") && ($0.hasSuffix("H") || $0.contains("H")) : $0.hasPrefix("frame") && ($0.hasSuffix("V") || $0.contains("V")) }, id: \.self) { frameName in
-                                            Button {
-                                                // Select the frame
-                                                if selectedMode == .centerCitation {
-                                                    selectedHorizontalFrame = frameName
-                                                } else {
-                                                    selectedVerticalFrame = frameName
-                                                }
-                                                refreshID = UUID() // Force refresh
-                                                showFrameSelector = false
-                                            } label: {
-                                                HStack {
-                                                    Text(frameName)
-                                                        .font(.system(size: 12, weight: .medium, design: .monospaced))
-
-                                                    Spacer()
-
-                                                    // Show checkmark for selected frame
-                                                    if frameName == (selectedMode == .sideBySide ? selectedHorizontalFrame : selectedVerticalFrame) {
-                                                        Image(systemName: "checkmark")
-                                                            .font(.system(size: 10, weight: .bold))
-                                                    }
-                                                }
-                                                .padding(.vertical, 6)
-                                                .padding(.horizontal, 10)
-                                                .contentShape(Rectangle())
-                                            }
-                                            .buttonStyle(PlainButtonStyle())
-                                            .foregroundColor(.white)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 0)
-                                                    .fill(
-                                                        frameName == (selectedMode == .sideBySide ? selectedHorizontalFrame : selectedVerticalFrame) ?
-                                                        Color(DesignTokens.brutalistPrimary).opacity(0.3) :
-                                                        Color.clear
-                                                    )
-                                            )
-                                        }
-                                    }
-                                    .frame(width: 200)
-                                }
-                                .frame(minHeight: 200)
-                                .background(Color.black.opacity(0.9))
-                            }
-
-                            // Frame analysis button
-                            createAnalyzeButton(for: selectedHorizontalFrame)
-                        }
-                    }
-                } else {
-                    // Custom mode - similar controls but for vertical frames
-                    HStack(spacing: 12) {
-                        // Frame toggle
-                        Toggle(isOn: $showOrnateFrame) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "photo.on.rectangle")
-                                    .font(.system(size: 12, weight: .medium))
-
-                                Text("FRAME")
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            }
-                            .foregroundColor(showOrnateFrame ? Color(DesignTokens.brutalistPrimary) : .white.opacity(0.6))
-                        }
-                        .toggleStyle(SwitchToggleStyle(tint: Color(DesignTokens.brutalistPrimary)))
-
-                        // Frame selector and analysis for vertical frames (when in custom mode)
-                        if showOrnateFrame {
-                            // Frame selector button
-                            Button {
-                                showFrameSelector.toggle()
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Text(selectedVerticalFrame)
-                                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                        .lineLimit(1)
-
-                                    Image(systemName: "chevron.down")
-                                        .font(.system(size: 8, weight: .bold))
-                                }
-                                .foregroundColor(Color(DesignTokens.brutalistPrimary))
-                                .padding(.vertical, 3)
-                                .padding(.horizontal, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .fill(Color.black.opacity(0.4))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 3)
-                                                .strokeBorder(Color(DesignTokens.brutalistPrimary).opacity(0.5), lineWidth: 1)
-                                        )
-                                )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-
-                            // Frame analysis button
-                            createAnalyzeButton(for: selectedVerticalFrame)
-                        }
-                    }
-                }
-            }
-            .padding(.bottom, 4)
-
-            HStack(spacing: 10) {
-                // Side by Side button
-                Button {
-                    selectedMode = .sideBySide
-                    viewModel.compositionMode = .sideBySide
-                    refreshID = UUID() // Force refresh
-                } label: {
-                    HStack {
-                        Image(systemName: "rectangle.split.2x1")
-                            .font(.system(size: 14, weight: .medium))
-
-                        Text("SIDE BY SIDE")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(
-                        UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
-                            .fill(selectedMode == .sideBySide ? Color(DesignTokens.brutalistPrimary).opacity(0.3) : Color.black.opacity(0.2))
-                            .overlay(
-                                UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
-                                    .strokeBorder(selectedMode == .sideBySide ? Color(DesignTokens.brutalistPrimary) : Color.white.opacity(0.2), lineWidth: 1)
-                            )
-                    )
-                    .foregroundColor(selectedMode == .sideBySide ? Color(DesignTokens.brutalistPrimary) : .white.opacity(0.6))
-                }
-                .buttonStyle(PlainButtonStyle())
-
-                // Custom Overlay button
-                Button {
-                    selectedMode = .custom
-                    viewModel.compositionMode = .custom
-                    refreshID = UUID() // Force refresh
-                } label: {
-                    HStack {
-                        Image(systemName: "rectangle.center.inset.filled")
-                            .font(.system(size: 14, weight: .medium))
-
-                        Text("CUSTOM OVERLAY")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(
-                        UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
-                            .fill(selectedMode == .custom ? Color(DesignTokens.brutalistPrimary).opacity(0.3) : Color.black.opacity(0.2))
-                            .overlay(
-                                UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
-                                    .strokeBorder(selectedMode == .custom ? Color(DesignTokens.brutalistPrimary) : Color.white.opacity(0.2), lineWidth: 1)
-                            )
-                    )
-                    .foregroundColor(selectedMode == .custom ? Color(DesignTokens.brutalistPrimary) : .white.opacity(0.6))
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
+            frameControlsSection
+            modeButtons
         }
     }
 
@@ -1164,11 +1258,21 @@ struct BrutalistPreviewView: View {
                                     outputData = pdfData
                                     
                                 case .jpeg:
-                                    guard let jpegData = outputImage.jpegData(compressionQuality: 0.9), jpegData.count > 0 else {
+                                    guard let tiffData = outputImage.tiffRepresentation,
+                                          let bitmapImageRep = NSBitmapImageRep(data: tiffData),
+                                          let jpegData = bitmapImageRep.representation(using: .jpeg, properties: [.compressionFactor: NSNumber(value: 0.1)]) else {
                                         return ExportResult.failure(index: citationIdx, error: "JPEG export failed for page \(citationIdx+1): Unable to convert to JPEG format")
                                     }
                                     outputURL = directory.appendingPathComponent(filename).appendingPathExtension("jpeg")
                                     outputData = jpegData
+                                    
+                                case .webp:
+                                    // WebP export - fallback to PNG since WebP isn't natively supported
+                                    guard let pngData = outputImage.pngData(), pngData.count > 0 else {
+                                        return ExportResult.failure(index: citationIdx, error: "WebP export failed for page \(citationIdx+1): Unable to convert to WebP format")
+                                    }
+                                    outputURL = directory.appendingPathComponent(filename).appendingPathExtension("webp")
+                                    outputData = pngData
                                 }
                                 
                                 // Write file atomically
@@ -1279,6 +1383,9 @@ struct BrutalistPreviewView: View {
         case .jpeg:
             savePanel.allowedContentTypes = [.jpeg]
             savePanel.nameFieldStringValue += ".jpeg"
+        case .webp:
+            savePanel.allowedContentTypes = [.webP]
+            savePanel.nameFieldStringValue += ".webp"
         }
         
         savePanel.begin { response in
