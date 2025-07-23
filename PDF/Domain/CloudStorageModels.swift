@@ -155,7 +155,7 @@ struct OAuthToken: Codable {
 
 // MARK: - Account Models
 
-struct CloudAccount: Codable, Identifiable {
+struct CloudAccount: Codable, Identifiable, Hashable {
     let id: String
     let email: String
     let displayName: String
@@ -297,6 +297,82 @@ class CloudOperationProgress: ObservableObject {
         self.error = nil
         self.completedBytes = 0
         self.totalBytes = 0
+    }
+}
+
+// MARK: - Connectivity Status Models
+
+enum AccountConnectivityStatus: Equatable {
+    case connected
+    case tokenExpired
+    case authenticationFailed
+    case networkError
+    case rateLimited
+    case unavailable(reason: String)
+    
+    var displayText: String {
+        switch self {
+        case .connected:
+            return "Connected"
+        case .tokenExpired:
+            return "Token Expired"
+        case .authenticationFailed:
+            return "Authentication Failed"
+        case .networkError:
+            return "Network Error"
+        case .rateLimited:
+            return "Rate Limited"
+        case .unavailable(let reason):
+            return "Unavailable: \(reason)"
+        }
+    }
+    
+    var isOperational: Bool {
+        switch self {
+        case .connected:
+            return true
+        default:
+            return false
+        }
+    }
+    
+    var canRetry: Bool {
+        switch self {
+        case .connected, .authenticationFailed:
+            return false
+        case .tokenExpired, .networkError, .rateLimited, .unavailable:
+            return true
+        }
+    }
+}
+
+struct AccountStatusSummary {
+    let total: Int
+    let connected: Int
+    let tokenExpired: Int
+    let authenticationFailed: Int
+    let networkIssues: Int
+    let rateLimited: Int
+    let unavailable: Int
+    
+    var operationalCount: Int {
+        return connected
+    }
+    
+    var hasIssues: Bool {
+        return tokenExpired + authenticationFailed + networkIssues + rateLimited + unavailable > 0
+    }
+    
+    var statusText: String {
+        if total == 0 {
+            return "No accounts connected"
+        } else if connected == total {
+            return "All \(total) accounts operational"
+        } else if connected == 0 {
+            return "No accounts operational (\(total) total)"
+        } else {
+            return "\(connected)/\(total) accounts operational"
+        }
     }
 }
 

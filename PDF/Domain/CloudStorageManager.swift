@@ -217,9 +217,24 @@ final class CloudStorageManager: ObservableObject {
         return !accounts(for: provider).isEmpty
     }
     
+    /// Check if any accounts are connected at all
+    var hasAnyConnectedAccounts: Bool {
+        return !connectedAccounts.isEmpty
+    }
+    
     /// Get primary account for a provider (first connected account)
     func primaryAccount(for provider: CloudProvider) -> CloudAccount? {
         return accounts(for: provider).first
+    }
+    
+    /// Get connected providers
+    var connectedProviders: [CloudProvider] {
+        return Array(Set(connectedAccounts.map { $0.provider }))
+    }
+    
+    /// Get connected accounts grouped by provider
+    var accountsByProvider: [CloudProvider: [CloudAccount]] {
+        return Dictionary(grouping: connectedAccounts, by: { $0.provider })
     }
     
     /// Update account status
@@ -239,6 +254,121 @@ final class CloudStorageManager: ObservableObject {
         // Update in memory array
         if let index = connectedAccounts.firstIndex(where: { $0.id == account.id && $0.provider == account.provider }) {
             connectedAccounts[index] = newAccount
+        }
+    }
+    
+    // MARK: - Connectivity Status
+    
+    /// Test connectivity for a specific account
+    func testAccountConnectivity(for account: CloudAccount) async -> AccountConnectivityStatus {
+        guard let client = apiClients[account.provider] else {
+            return .unavailable(reason: "Unsupported provider")
+        }
+        
+        do {
+            // Try to get storage info as a connectivity test
+            let _ = try await client.getStorageInfo(for: account)
+            return .connected
+        } catch {
+            if let cloudError = error as? CloudStorageError {
+                switch cloudError {
+                case .tokenExpired:
+                    return .tokenExpired
+                case .authenticationFailed(_):
+                    return .authenticationFailed
+                case .networkError(_):
+                    return .networkError
+                case .rateLimitExceeded:
+                    return .rateLimited
+                default:
+                    return .unavailable(reason: cloudError.localizedDescription)
+                }
+            }
+            return .unavailable(reason: error.localizedDescription)
+        }
+    }
+    
+    /// Test connectivity for all connected accounts
+    func testAllAccountsConnectivity() async -> [CloudAccount: AccountConnectivityStatus] {
+        var results: [CloudAccount: AccountConnectivityStatus] = [:]
+        
+        await withTaskGroup(of: (CloudAccount, AccountConnectivityStatus).self) { group in
+            for account in connectedAccounts {
+                group.addTask {
+                    let status = await self.testAccountConnectivity(for: account)
+                    return (account, status)
+                }
+            }
+            
+            for await (account, status) in group {
+                results[account] = status
+            }
+        }
+        
+        return results
+    }
+    
+    /// Get active (functioning) accounts
+    var activeAccounts: [CloudAccount] {
+        return connectedAccounts.filter { $0.isActive }
+    }
+    
+    /// Get account count by connectivity status
+    func getAccountStatusSummary() async -> AccountStatusSummary {
+        let connectivityResults = await testAllAccountsConnectivity()
+        
+        var connected: Int = 0
+        var tokenExpired: Int = 0
+        var authFailed: Int = 0
+        var networkIssues: Int = 0
+        var rateLimited: Int = 0
+        var unavailable: Int = 0
+        
+        for (_, status) in connectivityResults {
+            switch status {
+            case .connected:
+                connected += 1
+            case .tokenExpired:
+                tokenExpired += 1
+            case .authenticationFailed:
+                authFailed += 1
+            case .networkError:
+                networkIssues += 1
+            case .rateLimited:
+                rateLimited += 1
+            case .unavailable(_):
+                unavailable += 1
+            }
+        }
+        
+        return AccountStatusSummary(
+            total: connectedAccounts.count,
+            connected: connected,
+            tokenExpired: tokenExpired,
+            authenticationFailed: authFailed,
+            networkIssues: networkIssues,
+            rateLimited: rateLimited,
+            unavailable: unavailable
+        )
+    }
+    
+    /// Refresh tokens for all accounts with expired tokens
+    func refreshExpiredTokens() async {
+        let connectivityResults = await testAllAccountsConnectivity()
+        
+        await withTaskGroup(of: Void.self) { group in
+            for (account, status) in connectivityResults {
+                if case .tokenExpired = status {
+                    group.addTask {
+                        do {
+                            try await self.refreshToken(for: account)
+                            print("✅ Successfully refreshed token for \(account.displayName)")
+                        } catch {
+                            print("❌ Failed to refresh token for \(account.displayName): \(error)")
+                        }
+                    }
+                }
+            }
         }
     }
     

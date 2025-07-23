@@ -558,18 +558,8 @@ struct AppShell: View {
         }
         .sheet(isPresented: $viewModel.showingCloudExport) {
             if let pdfDocument = viewModel.pdfDocument {
-                // We'll create a temporary URL for the cloud export
-                // In a real implementation, you'd want to handle this more elegantly
-                CloudStoragePickerView(
-                    localFileURL: URL(fileURLWithPath: "/tmp/temp_export.pdf"),
-                    onComplete: { account, remotePath in
-                        viewModel.showingCloudExport = false
-                        // Handle successful cloud export
-                    },
-                    onCancel: {
-                        viewModel.showingCloudExport = false
-                    }
-                )
+                // Create a proper temporary PDF for cloud export
+                AppShellCloudExportView(viewModel: viewModel, pdfDocument: pdfDocument)
             }
         }
     }
@@ -657,6 +647,118 @@ struct AppShell: View {
             NoisyOverlay(intensity: 2.0, asymmetric: true, blendingMode: "overlayBlendMode")
                 .opacity(0.6)
         )
+    }
+}
+
+// MARK: - AppShell Cloud Export Helper View
+
+struct AppShellCloudExportView: View {
+    @ObservedObject var viewModel: AppShellViewModel
+    let pdfDocument: PDFDocument
+    @State private var temporaryPDFURL: URL?
+    @State private var isCreatingPDF: Bool = true
+    @State private var creationError: String?
+    
+    var body: some View {
+        Group {
+            if let tempURL = temporaryPDFURL {
+                // Show the cloud storage picker with the created temporary PDF
+                CloudStoragePickerView(
+                    localFileURL: tempURL,
+                    onComplete: { request, account in
+                        viewModel.showingCloudExport = false
+                        // Clean up temporary file
+                        cleanupTemporaryFile()
+                    },
+                    onCancel: {
+                        viewModel.showingCloudExport = false
+                        // Clean up temporary file
+                        cleanupTemporaryFile()
+                    }
+                )
+            } else if isCreatingPDF {
+                // Show loading while creating PDF
+                VStack(spacing: 20) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: Color(DesignTokens.brutalistPrimary)))
+                        .scaleEffect(1.5)
+                    
+                    BrutalistTechnicalText(
+                        text: "PREPARING PDF FOR CLOUD EXPORT...",
+                        color: Color(DesignTokens.brutalistPrimary),
+                        size: 14,
+                        addDecorators: true,
+                        align: .center
+                    )
+                }
+                .frame(width: 400, height: 300)
+                .background(Color.black)
+                .onAppear {
+                    createTemporaryPDF()
+                }
+            } else if let error = creationError {
+                // Show error state
+                VStack(spacing: 20) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundColor(.red)
+                    
+                    Text("Failed to prepare PDF for export")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                    
+                    Text(error)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                    
+                    Button("Close") {
+                        viewModel.showingCloudExport = false
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .frame(width: 400, height: 300)
+                .background(Color.black)
+            }
+        }
+    }
+    
+    private func createTemporaryPDF() {
+        Task {
+            do {
+                // Create temporary directory for export
+                let tempDir = FileManager.default.temporaryDirectory
+                let tempURL = tempDir.appendingPathComponent("appshell_cloud_export_\(UUID().uuidString).pdf")
+                
+                // Create a copy of the original PDF for export
+                // In AppShell context, we typically export the entire original PDF
+                // since composition might not be configured yet
+                guard let pdfData = pdfDocument.dataRepresentation() else {
+                    throw NSError(domain: "AppShellExportError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get PDF data representation"])
+                }
+                
+                try pdfData.write(to: tempURL)
+                
+                await MainActor.run {
+                    self.temporaryPDFURL = tempURL
+                    self.isCreatingPDF = false
+                }
+                
+            } catch {
+                await MainActor.run {
+                    self.creationError = error.localizedDescription
+                    self.isCreatingPDF = false
+                }
+            }
+        }
+    }
+    
+    private func cleanupTemporaryFile() {
+        if let tempURL = temporaryPDFURL {
+            try? FileManager.default.removeItem(at: tempURL)
+            temporaryPDFURL = nil
+        }
     }
 }
 

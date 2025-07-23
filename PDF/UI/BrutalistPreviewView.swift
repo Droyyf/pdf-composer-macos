@@ -314,7 +314,7 @@ class PDFImageCache {
 
 // Cache delegate for monitoring  
 private class CacheDelegate: NSObject, NSCacheDelegate {
-    @objc func cache(_ cache: NSCache<AnyObject, AnyObject>, willEvictObject obj: AnyObject) {
+    @objc func cache(_ cache: NSCache<AnyObject, AnyObject>, willEvictObject obj: Any) {
         print("🗑️ Cache evicting object due to memory pressure")
     }
 }
@@ -329,10 +329,12 @@ struct BrutalistPreviewView: View {
     @ObservedObject var viewModel: AppShellViewModel
     @Environment(\.presentationMode) var presentationMode
     @State private var showFileExporter = false
+    @State private var showCloudExporter = false
     @State private var selectedMode: CompositionMode = .centerCitation
     @State private var selectedFormat: ExportService.ExportFormat = .png
     @State private var showToast: Bool = false
     @State private var toastMessage: String = ""
+    @StateObject private var cloudManager = CloudStorageManager.shared
     @State private var refreshID = UUID()
     @State private var showOrnateFrame: Bool = false
     @State private var selectedHorizontalFrame: String = "frameH"
@@ -578,8 +580,8 @@ struct BrutalistPreviewView: View {
                 previewContent
 
                 // Action buttons
-                HStack(spacing: 30) {
-                    // Export button
+                HStack(spacing: 20) {
+                    // Local Export button
                     Button {
                         showFileExporter = true
                     } label: {
@@ -604,6 +606,60 @@ struct BrutalistPreviewView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     .disabled(viewModel.citationPageIndices.isEmpty || viewModel.coverPageIndex == nil)
+                    
+                    // Cloud Export button (only show if accounts are connected)
+                    if cloudManager.hasAnyConnectedAccounts {
+                        Button {
+                            showCloudExporter = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "cloud.arrow.up")
+                                    .font(.system(size: 14, weight: .bold))
+
+                                Text("EXPORT TO CLOUD (\(cloudManager.connectedProviders.count) ACCOUNT\(cloudManager.connectedProviders.count == 1 ? "" : "S"))")
+                                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            }
+                            .foregroundColor(Color(DesignTokens.brutalistPrimary))
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 16)
+                            .background(
+                                UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
+                                    .fill(Color(DesignTokens.brutalistPrimary).opacity(0.1))
+                                    .overlay(
+                                        UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
+                                            .strokeBorder(Color(DesignTokens.brutalistPrimary).opacity(0.6), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .disabled(viewModel.citationPageIndices.isEmpty || viewModel.coverPageIndex == nil)
+                    } else {
+                        // Show disabled cloud export button with suggestion
+                        VStack(spacing: 4) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "cloud.slash")
+                                    .font(.system(size: 14, weight: .bold))
+
+                                Text("CLOUD EXPORT")
+                                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            }
+                            .foregroundColor(.white.opacity(0.4))
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 16)
+                            .background(
+                                UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
+                                    .fill(Color.black.opacity(0.2))
+                                    .overlay(
+                                        UnevenRoundedRectangle(cornerRadii: DesignTokens.brutalCorners, style: .continuous)
+                                            .strokeBorder(.white.opacity(0.2), lineWidth: 1)
+                                    )
+                            )
+                            
+                            Text("Connect cloud accounts in settings")
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                    }
 
                     // Return button
                     Button {
@@ -715,6 +771,11 @@ struct BrutalistPreviewView: View {
                 DispatchQueue.main.async {
                     showSavePanel()
                 }
+            }
+        }
+        .sheet(isPresented: $showCloudExporter) {
+            if let pdfDocument = viewModel.pdfDocument {
+                cloudExportSheet(pdfDocument: pdfDocument)
             }
         }
         .onAppear {
@@ -1396,6 +1457,144 @@ struct BrutalistPreviewView: View {
                     await handleExport(to: directory)
                 }
             }
+        }
+    }
+    
+    // MARK: - Cloud Export Sheet
+    
+    @ViewBuilder
+    private func cloudExportSheet(pdfDocument: PDFDocument) -> some View {
+        // Create a temporary file for the composed PDF
+        if let composedFileURL = createTemporaryComposedPDF(pdfDocument: pdfDocument) {
+            CloudStoragePickerView(
+                localFileURL: composedFileURL,
+                onComplete: { request, account in
+                    // Handle successful cloud upload
+                    showCloudExporter = false
+                    showToastMessage("Successfully uploaded to \(account.provider.displayName)")
+                    
+                    // Clean up temporary file
+                    try? FileManager.default.removeItem(at: composedFileURL)
+                },
+                onCancel: {
+                    // Handle cancel
+                    showCloudExporter = false
+                    
+                    // Clean up temporary file
+                    try? FileManager.default.removeItem(at: composedFileURL)
+                }
+            )
+        } else {
+            // Fallback view if PDF creation fails
+            VStack(spacing: 20) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.red)
+                
+                Text("Failed to prepare PDF for cloud export")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                
+                Button("Close") {
+                    showCloudExporter = false
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding(40)
+            .background(Color.black)
+        }
+    }
+    
+    private func createTemporaryComposedPDF(pdfDocument: PDFDocument) -> URL? {
+        // Create temporary directory for export
+        let tempDir = FileManager.default.temporaryDirectory
+        let tempURL = tempDir.appendingPathComponent("cloud_export_\(UUID().uuidString).pdf")
+        
+        do {
+            // Create the composed PDF based on current composition mode
+            let composedPDF = createComposedPDF(pdfDocument: pdfDocument)
+            
+            // Write to temporary file
+            guard let pdfData = composedPDF.dataRepresentation() else {
+                print("Failed to get PDF data representation")
+                return nil
+            }
+            
+            try pdfData.write(to: tempURL)
+            return tempURL
+            
+        } catch {
+            print("Failed to create temporary PDF for cloud export: \(error)")
+            return nil
+        }
+    }
+    
+    private func createComposedPDF(pdfDocument: PDFDocument) -> PDFDocument {
+        guard let coverIdx = viewModel.coverPageIndex,
+              coverIdx < pdfDocument.pageCount,
+              let coverPage = pdfDocument.page(at: coverIdx),
+              !viewModel.citationPageIndices.isEmpty else {
+            return pdfDocument // Return original if no composition needed
+        }
+        
+        let newPDF = PDFDocument()
+        
+        // Add composed pages based on current mode
+        for (index, citationIdx) in viewModel.citationPageIndices.enumerated() {
+            guard citationIdx < pdfDocument.pageCount,
+                  let citationPage = pdfDocument.page(at: citationIdx) else {
+                continue
+            }
+            
+            // Create composed image based on current mode
+            let composedImage: NSImage
+            switch selectedMode {
+            case .centerCitation:
+                composedImage = brutalistComposeBase(
+                    citation: citationPage,
+                    applyFrame: showOrnateFrame,
+                    frameName: currentFrame
+                )
+            case .leftAlign:
+                composedImage = brutalistComposeSideBySide(
+                    citation: citationPage,
+                    cover: coverPage,
+                    applyFrame: showOrnateFrame,
+                    frameName: currentFrame,
+                    isPreview: false
+                )
+            case .rightAlign:
+                // Use viewModel's cover position and size
+                composedImage = brutalistComposeCustom(
+                    citation: citationPage,
+                    cover: coverPage,
+                    coverPosition: viewModel.coverPosition,
+                    coverSize: viewModel.coverSize,
+                    applyFrame: showOrnateFrame,
+                    frameName: currentFrame,
+                    isPreview: false
+                )
+            case .fullPage:
+                composedImage = brutalistComposeBase(
+                    citation: citationPage,
+                    applyFrame: showOrnateFrame,
+                    frameName: currentFrame
+                )
+            }
+            
+            // Convert composed image to PDF page
+            if let pdfPage = PDFPage(image: composedImage) {
+                newPDF.insert(pdfPage, at: index)
+            }
+        }
+        
+        return newPDF
+    }
+    
+    private func showToastMessage(_ message: String) {
+        withAnimation {
+            showToast = true
+            toastMessage = message
         }
     }
 
