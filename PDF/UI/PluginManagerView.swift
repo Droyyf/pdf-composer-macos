@@ -524,7 +524,7 @@ struct PluginListItemView: View {
         .padding(.vertical, 12)
         .background(
             Rectangle()
-                .fill(isSelected ? .quaternary : Color.clear)
+                .fill(isSelected ? Color.quaternary : Color.clear)
                 .overlay(
                     Rectangle()
                         .stroke(isSelected ? .primary : Color.clear, lineWidth: 1)
